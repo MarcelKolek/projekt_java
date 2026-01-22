@@ -41,18 +41,22 @@ public class CategoryService {
     @Transactional
     public Category create(CategoryRequest req) {
         log.info("Creating category name={}", req.name);
+
         Category c = new Category();
         c.setName(req.name);
-        c.setColor(req.color);
+        c.setColor(normalizeHex(req.color));
+
         return categoryRepository.save(c);
     }
 
     @Transactional
     public Category update(Long id, CategoryRequest req) {
         log.info("Updating category id={}", id);
+
         Category c = getById(id);
         c.setName(req.name);
-        c.setColor(req.color);
+        c.setColor(normalizeHex(req.color));
+
         return categoryRepository.save(c);
     }
 
@@ -60,14 +64,16 @@ public class CategoryService {
     public void delete(Long id) {
         log.info("Deleting category id={}", id);
 
-        if (!categoryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Category id=" + id + " not found");
-        }
+        getById(id);
 
-        // po usunięciu kategorii taski mają category_id = NULL
+        // po usunięciu kategorii category_id = NULL
         int updated = taskRepository.clearCategoryForTasks(id);
         log.info("Cleared category for {} tasks (categoryId={})", updated, id);
 
         categoryRepository.deleteById(id);
+    }
+
+    private String normalizeHex(String color) {
+        return color == null ? null : color.trim().toLowerCase();
     }
 }
