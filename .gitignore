@@ -78,3 +78,7 @@ data/
 
 node_modules/
 dist/
+
+.metals/
+
+
