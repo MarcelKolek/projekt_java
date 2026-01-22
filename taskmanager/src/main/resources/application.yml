@@ -14,3 +14,7 @@ spring:
       path: /h2
       settings:
         web-allow-others: true
+  springdoc:
+    swagger-ui:
+      path: /swagger-ui.html
+
