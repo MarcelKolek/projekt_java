@@ -21,6 +21,7 @@ public class TaskService {
     }
 
     public Page<Task> list(
+            String username,
             TaskStatus status,
             Long categoryId,
             String q,
@@ -29,6 +30,7 @@ public class TaskService {
             Pageable pageable
     ) {
         return taskRepository.search(
+                username,
                 status,
                 categoryId,
                 q,

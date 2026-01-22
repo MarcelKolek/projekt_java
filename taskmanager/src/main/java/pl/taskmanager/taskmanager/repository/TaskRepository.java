@@ -19,13 +19,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("""
         select t from Task t
-        where (:status is null or t.status = :status)
+        where t.user.username = :username
+          and (:status is null or t.status = :status)
           and (:categoryId is null or t.category.id = :categoryId)
           and (:q is null or lower(t.title) like lower(concat('%', :q, '%')))
           and (:dueBefore is null or t.dueDate < :dueBefore)
           and (:dueAfter is null or t.dueDate > :dueAfter)
         """)
     Page<Task> search(
+            @Param("username") String username,
             @Param("status") TaskStatus status,
             @Param("categoryId") Long categoryId,
             @Param("q") String q,
@@ -33,4 +35,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("dueAfter") LocalDate dueAfter,
             Pageable pageable
     );
+
+    java.util.List<Task> findAllByUser(pl.taskmanager.taskmanager.entity.User user);
 }

@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:taskdb
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    depends_on:
+      - db
+  db:
+    image: h2lab/h2-server
+    ports:
+      - "9092:9092"
+      - "8082:8082"

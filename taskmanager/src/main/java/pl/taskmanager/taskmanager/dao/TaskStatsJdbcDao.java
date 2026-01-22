@@ -13,8 +13,7 @@ public class TaskStatsJdbcDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public TaskStatsResponse getStats() {
-
+    public TaskStatsResponse getStats(Long userId) {
         String sql = """
             select
               count(*) as total,
@@ -22,6 +21,7 @@ public class TaskStatsJdbcDao {
               sum(case when status = 'IN_PROGRESS' then 1 else 0 end) as in_progress,
               sum(case when status = 'DONE' then 1 else 0 end) as done
             from tasks
+            where user_id = ?
         """;
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
@@ -40,6 +40,6 @@ public class TaskStatsJdbcDao {
                     done,
                     percentDone
             );
-        });
+        }, userId);
     }
 }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Rejestracja')}"></head>
+<body th:replace="~{fragments/layout :: body(~{::content})}">
+<content>
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Rejestracja</h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/register}" th:object="${registerRequest}" method="post">
+                        <div th:if="${registrationError}" class="alert alert-danger" th:text="${registrationError}"></div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nazwa użytkownika</label>
+                            <input type="text" th:field="*{username}" class="form-control" id="username" required>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Hasło</label>
+                            <input type="password" th:field="*{password}" class="form-control" id="password" required>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Zarejestruj się</button>
+                            <a href="/login" class="btn btn-link">Powrót do logowania</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</content>
+</body>
+</html>

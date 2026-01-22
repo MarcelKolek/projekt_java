@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Logowanie')}"></head>
+<body th:replace="~{fragments/layout :: body(~{::content})}">
+<content>
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Logowanie</h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/login}" method="post">
+                        <div th:if="${param.error}" class="alert alert-danger">
+                            Nieprawidłowy login lub hasło.
+                        </div>
+                        <div th:if="${param.logout}" class="alert alert-info">
+                            Zostałeś wylogowany.
+                        </div>
+                        <div th:if="${param.registered}" class="alert alert-success">
+                            Rejestracja pomyślna! Możesz się teraz zalogować.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nazwa użytkownika</label>
+                            <input type="text" name="username" class="form-control" id="username" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Hasło</label>
+                            <input type="password" name="password" class="form-control" id="password" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Zaloguj się</button>
+                            <hr>
+                            <div class="text-center">
+                                <span>Nie masz konta?</span>
+                                <a href="/register" class="btn btn-link">Zarejestruj się tutaj</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</content>
+</body>
+</html>

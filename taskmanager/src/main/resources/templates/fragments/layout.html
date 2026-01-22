@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:fragment="head(title)">
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -14,9 +14,17 @@
 <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
   <div class="container">
     <a class="navbar-brand" href="/">Task Manager</a>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 align-items-center">
+      <div sec:authorize="isAuthenticated()" class="text-light me-2 small">
+        Witaj, <span sec:authentication="name">Użytkownik</span>
+      </div>
       <a class="btn btn-outline-light btn-sm" href="/swagger-ui.html" target="_blank">Swagger</a>
       <a class="btn btn-outline-light btn-sm" href="/api/v1/tasks/export/csv">CSV</a>
+      <a sec:authorize="!isAuthenticated()" class="btn btn-primary btn-sm" href="/register">Zarejestruj się</a>
+      <a sec:authorize="!isAuthenticated()" class="btn btn-outline-light btn-sm" href="/login">Zaloguj się</a>
+      <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="m-0">
+        <button type="submit" class="btn btn-danger btn-sm">Wyloguj</button>
+      </form>
     </div>
   </div>
 </nav>

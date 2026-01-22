@@ -29,6 +29,10 @@ public class Task {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -59,6 +63,8 @@ public class Task {
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

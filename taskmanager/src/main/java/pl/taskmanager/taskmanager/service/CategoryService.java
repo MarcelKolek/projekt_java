@@ -26,34 +26,39 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Category> getAll() {
-        log.debug("Fetching all categories");
-        return categoryRepository.findAll();
+    public List<Category> getAll(pl.taskmanager.taskmanager.entity.User user) {
+        log.debug("Fetching all categories for user={}", user.getUsername());
+        return categoryRepository.findAllByUser(user);
     }
 
     @Transactional(readOnly = true)
-    public Category getById(Long id) {
-        log.debug("Fetching category id={}", id);
-        return categoryRepository.findById(id)
+    public Category getById(Long id, pl.taskmanager.taskmanager.entity.User user) {
+        log.debug("Fetching category id={} for user={}", id, user.getUsername());
+        Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category id=" + id + " not found"));
+        if (!c.getUser().getId().equals(user.getId())) {
+            throw new ResourceNotFoundException("Category id=" + id + " not found");
+        }
+        return c;
     }
 
     @Transactional
-    public Category create(CategoryRequest req) {
-        log.info("Creating category name={}", req.name);
+    public Category create(CategoryRequest req, pl.taskmanager.taskmanager.entity.User user) {
+        log.info("Creating category name={} for user={}", req.name, user.getUsername());
 
         Category c = new Category();
         c.setName(req.name);
         c.setColor(normalizeHex(req.color));
+        c.setUser(user);
 
         return categoryRepository.save(c);
     }
 
     @Transactional
-    public Category update(Long id, CategoryRequest req) {
-        log.info("Updating category id={}", id);
+    public Category update(Long id, CategoryRequest req, pl.taskmanager.taskmanager.entity.User user) {
+        log.info("Updating category id={} for user={}", id, user.getUsername());
 
-        Category c = getById(id);
+        Category c = getById(id, user);
         c.setName(req.name);
         c.setColor(normalizeHex(req.color));
 
@@ -61,10 +66,10 @@ public class CategoryService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        log.info("Deleting category id={}", id);
+    public void delete(Long id, pl.taskmanager.taskmanager.entity.User user) {
+        log.info("Deleting category id={} for user={}", id, user.getUsername());
 
-        getById(id);
+        getById(id, user);
 
         // po usunięciu kategorii category_id = NULL
         int updated = taskRepository.clearCategoryForTasks(id);
