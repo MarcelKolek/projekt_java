@@ -24,6 +24,12 @@
                             <input type="password" th:field="*{password}" class="form-control" id="password" required>
                             <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
                         </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" th:field="*{email}" class="form-control" id="email">
+                            <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                        </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Zarejestruj się</button>

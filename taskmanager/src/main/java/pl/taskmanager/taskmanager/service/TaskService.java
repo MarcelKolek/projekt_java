@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Transactional(readOnly = true)
 public class TaskService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TaskService.class);
     private final TaskRepository taskRepository;
 
     public TaskService(TaskRepository taskRepository) {
@@ -29,6 +30,7 @@ public class TaskService {
             LocalDate dueAfter,
             Pageable pageable
     ) {
+        log.debug("Listing tasks for user: {}", username);
         return taskRepository.search(
                 username,
                 status,
@@ -38,5 +40,28 @@ public class TaskService {
                 dueAfter,
                 pageable
         );
+    }
+
+    @Transactional
+    public Task save(Task task) {
+        log.info("Saving task: {}", task.getTitle());
+        return taskRepository.save(task);
+    }
+
+    @Transactional
+    public void delete(Long id, String username) {
+        log.info("Deleting task id: {} for user: {}", id, username);
+        Task task = getById(id, username);
+        taskRepository.delete(task);
+    }
+
+    public Task getById(Long id, String username) {
+        log.debug("Getting task id: {} for user: {}", id, username);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Task not found"));
+        if (!task.getUser().getUsername().equals(username)) {
+            throw new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Task not found");
+        }
+        return task;
     }
 }

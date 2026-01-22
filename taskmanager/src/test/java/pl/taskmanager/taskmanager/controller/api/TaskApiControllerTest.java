@@ -12,6 +12,7 @@ import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
 import pl.taskmanager.taskmanager.dto.TaskRequest;
 import pl.taskmanager.taskmanager.entity.Task;
 import pl.taskmanager.taskmanager.entity.TaskStatus;
+import pl.taskmanager.taskmanager.entity.User;
 import pl.taskmanager.taskmanager.repository.CategoryRepository;
 import pl.taskmanager.taskmanager.repository.TaskRepository;
 
@@ -41,6 +42,9 @@ class TaskApiControllerTest {
     @MockitoBean
     private pl.taskmanager.taskmanager.service.UserService userService;
 
+    @MockitoBean
+    private pl.taskmanager.taskmanager.service.TaskService taskService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -65,7 +69,7 @@ class TaskApiControllerTest {
         Task saved = new Task();
         saved.setTitle("New Task");
         saved.setUser(user);
-        when(taskRepository.save(any(Task.class))).thenReturn(saved);
+        when(taskService.save(any(Task.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/v1/tasks")
                         .with(csrf())
@@ -84,7 +88,7 @@ class TaskApiControllerTest {
         Task task = new Task();
         task.setTitle("Found");
         task.setUser(user);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskService.getById(1L, "user")).thenReturn(task);
 
         mockMvc.perform(get("/api/v1/tasks/1"))
                 .andExpect(status().isOk())
@@ -109,5 +113,34 @@ class TaskApiControllerTest {
     void shouldDenyAnonymous() throws Exception {
         mockMvc.perform(get("/api/v1/tasks"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "user")
+    void shouldHandleNotFoundInUpdate() throws Exception {
+        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+
+        TaskRequest req = new TaskRequest();
+        req.title = "Update";
+        req.status = TaskStatus.TODO;
+
+        mockMvc.perform(put("/api/v1/tasks/999")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "user")
+    void shouldExportCsv() throws Exception {
+        User user = new User();
+        user.setUsername("user");
+        when(userService.findByUsername("user")).thenReturn(user);
+        when(taskRepository.findAllByUser(user)).thenReturn(java.util.List.of());
+
+        mockMvc.perform(get("/api/v1/tasks/export/csv"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "text/csv; charset=utf-8"));
     }
 }

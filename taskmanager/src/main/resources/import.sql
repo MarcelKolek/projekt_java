@@ -1,7 +1,9 @@
--- Inicjalizacja kategorii
-INSERT INTO categories (name, color) VALUES ('Work', '#ff0000');
-INSERT INTO categories (name, color) VALUES ('Home', '#00ff00');
-INSERT INTO categories (name, color) VALUES ('Study', '#0000ff');
+-- Inicjalizacja kategorii (user_id=null dla globalnych lub do przypisania)
+-- Ponieważ teraz każda kategoria MUSI mieć user_id (zgodnie z moimi zmianami izolacji), 
+-- lepiej stworzyć startowego użytkownika.
+INSERT INTO users (id, username, password, email) VALUES (1, 'admin', '$2a$10$vYfXmY8W1TzXmY8W1TzXmY8W1TzXmY8W1TzXmY8W1TzXmY8W1TzXm', 'admin@example.com'); -- password: password
+INSERT INTO user_roles (user_id, role) VALUES (1, 'ROLE_USER');
 
--- Przykładowe zadania (H2 nie wspiera ON DUPLICATE KEY tak samo jak MySQL, użyjemy prostych insertów)
--- Spring Boot wykona ten plik przy starcie jeśli ddl-auto nie usuwa wszystkiego
+INSERT INTO categories (name, color, user_id) VALUES ('Praca', '#0d6efd', 1);
+INSERT INTO categories (name, color, user_id) VALUES ('Dom', '#198754', 1);
+INSERT INTO categories (name, color, user_id) VALUES ('Studia', '#6f42c1', 1);

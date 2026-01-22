@@ -33,6 +33,14 @@ public class Task {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToMany
+    @JoinTable(
+        name = "task_tags",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private java.util.Set<Tag> tags;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -65,6 +73,8 @@ public class Task {
     public void setCategory(Category category) { this.category = category; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public java.util.Set<Tag> getTags() { return tags; }
+    public void setTags(java.util.Set<Tag> tags) { this.tags = tags; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

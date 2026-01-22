@@ -50,15 +50,18 @@ public class TaskApiController {
     private final CategoryRepository categoryRepository;
     private final TaskStatsJdbcDao taskStatsJdbcDao;
     private final UserService userService;
+    private final pl.taskmanager.taskmanager.service.TaskService taskService;
 
     public TaskApiController(TaskRepository taskRepository,
                              CategoryRepository categoryRepository,
                              TaskStatsJdbcDao taskStatsJdbcDao,
-                             UserService userService) {
+                             UserService userService,
+                             pl.taskmanager.taskmanager.service.TaskService taskService) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
         this.taskStatsJdbcDao = taskStatsJdbcDao;
         this.userService = userService;
+        this.taskService = taskService;
     }
 
     @Operation(
@@ -98,7 +101,7 @@ public class TaskApiController {
     ) {
         log.debug("GET /api/v1/tasks username={}, status={}, categoryId={}, q={}", userDetails.getUsername(), status, categoryId, q);
         return ResponseEntity.ok(
-                taskRepository.search(userDetails.getUsername(), status, categoryId, q, dueBefore, dueAfter, pageable)
+                taskService.list(userDetails.getUsername(), status, categoryId, q, dueBefore, dueAfter, pageable)
         );
     }
 
@@ -113,11 +116,7 @@ public class TaskApiController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task id=" + id + " not found"));
-        if (!task.getUser().getUsername().equals(userDetails.getUsername())) {
-            throw new ResourceNotFoundException("Task id=" + id + " not found");
-        }
+        Task task = taskService.getById(id, userDetails.getUsername());
         return ResponseEntity.ok(task);
     }
 
@@ -137,7 +136,7 @@ public class TaskApiController {
         Task task = new Task();
         task.setUser(user);
         applyRequest(task, req, user);
-        Task saved = taskRepository.save(task);
+        Task saved = taskService.save(task);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
@@ -161,7 +160,7 @@ public class TaskApiController {
         }
         User user = task.getUser();
         applyRequest(task, req, user);
-        Task saved = taskRepository.save(task);
+        Task saved = taskService.save(task);
         return ResponseEntity.ok(saved);
     }
 
@@ -176,13 +175,7 @@ public class TaskApiController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        log.info("Deleting task id={} for user={}", id, userDetails.getUsername());
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task id=" + id + " not found"));
-        if (!task.getUser().getUsername().equals(userDetails.getUsername())) {
-            throw new ResourceNotFoundException("Task id=" + id + " not found");
-        }
-        taskRepository.delete(task);
+        taskService.delete(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 

@@ -31,7 +31,7 @@ class ArchitectureTest {
     static final ArchRule controllers_should_not_depend_on_entities = classes()
         .that().resideInAPackage("..controller.api..")
         .should().onlyDependOnClassesThat().resideInAnyPackage(
-            "..dto..", "..entity..", "..service..", "..repository..", "..dao..", "..exception..", "..controller.api..",
+            "..dto..", "..entity..", "..service..", "..repository..", "..dao..", "..exception..", "..controller.api..", "..config..",
             "java..", "org.springframework..", "io.swagger..", "jakarta.validation..", "org.slf4j..", "com.fasterxml.jackson..",
             "org.junit..", "org.mockito.."
         );

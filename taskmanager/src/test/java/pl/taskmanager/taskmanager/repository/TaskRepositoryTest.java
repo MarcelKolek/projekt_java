@@ -149,4 +149,32 @@ class TaskRepositoryTest {
         taskRepository.save(t2);
         assertThat(taskRepository.findAll()).hasSize(2);
     }
+
+    @Test
+    void shouldSearchTasksByStatus() {
+        Task t1 = new Task(); t1.setTitle("T1"); t1.setStatus(TaskStatus.TODO); t1.setUser(testUser);
+        Task t2 = new Task(); t2.setTitle("T2"); t2.setStatus(TaskStatus.DONE); t2.setUser(testUser);
+        taskRepository.save(t1);
+        taskRepository.save(t2);
+        
+        org.springframework.data.domain.Page<Task> result = taskRepository.search(
+            testUser.getUsername(), TaskStatus.TODO, null, null, null, null, org.springframework.data.domain.PageRequest.of(0, 10)
+        );
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("T1");
+    }
+
+    @Test
+    void shouldSearchTasksByQuery() {
+        Task t1 = new Task(); t1.setTitle("Apple"); t1.setStatus(TaskStatus.TODO); t1.setUser(testUser);
+        Task t2 = new Task(); t2.setTitle("Banana"); t2.setStatus(TaskStatus.TODO); t2.setUser(testUser);
+        taskRepository.save(t1);
+        taskRepository.save(t2);
+        
+        org.springframework.data.domain.Page<Task> result = taskRepository.search(
+            testUser.getUsername(), null, null, "apple", null, null, org.springframework.data.domain.PageRequest.of(0, 10)
+        );
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("Apple");
+    }
 }
