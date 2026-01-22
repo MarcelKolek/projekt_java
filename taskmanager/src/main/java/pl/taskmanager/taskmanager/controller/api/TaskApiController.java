@@ -14,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
 import pl.taskmanager.taskmanager.dto.TaskRequest;
 import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
 import pl.taskmanager.taskmanager.entity.Category;
@@ -33,10 +34,14 @@ public class TaskApiController {
 
     private final TaskRepository taskRepository;
     private final CategoryRepository categoryRepository;
+    private final TaskStatsJdbcDao taskStatsJdbcDao;
 
-    public TaskApiController(TaskRepository taskRepository, CategoryRepository categoryRepository) {
+    public TaskApiController(TaskRepository taskRepository,
+                             CategoryRepository categoryRepository,
+                             TaskStatsJdbcDao taskStatsJdbcDao) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
+        this.taskStatsJdbcDao = taskStatsJdbcDao;
     }
 
     @Operation(
@@ -191,6 +196,18 @@ public class TaskApiController {
         double percentDone = (total == 0) ? 0.0 : (done * 100.0 / total);
 
         return ResponseEntity.ok(new TaskStatsResponse(total, todo, inProgress, done, percentDone));
+    }
+
+    @Operation(
+            summary = "Statystyki zadań (dashboard) - JdbcTemplate",
+            description = "Zwraca statystyki liczone przez DAO z JdbcTemplate (SQL + RowMapper)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Statystyki zwrócone poprawnie")
+    })
+    @GetMapping("/stats/jdbc")
+    public ResponseEntity<TaskStatsResponse> statsJdbc() {
+        return ResponseEntity.ok(taskStatsJdbcDao.getStats());
     }
 
     private void applyRequest(Task task, TaskRequest req) {
