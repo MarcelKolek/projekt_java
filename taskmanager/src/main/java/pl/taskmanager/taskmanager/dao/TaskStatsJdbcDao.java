@@ -1,8 +1,12 @@
 package pl.taskmanager.taskmanager.dao;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Repository
 public class TaskStatsJdbcDao {
@@ -24,7 +28,12 @@ public class TaskStatsJdbcDao {
             where user_id = ?
         """;
 
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+        return jdbcTemplate.queryForObject(sql, new TaskStatsRowMapper(), userId);
+    }
+
+    private static class TaskStatsRowMapper implements RowMapper<TaskStatsResponse> {
+        @Override
+        public TaskStatsResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
             long total = rs.getLong("total");
             long todo = rs.getLong("todo");
             long inProgress = rs.getLong("in_progress");
@@ -40,6 +49,6 @@ public class TaskStatsJdbcDao {
                     done,
                     percentDone
             );
-        }, userId);
+        }
     }
 }

@@ -14,19 +14,26 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, pl.taskmanager.taskmanager.service.UserService userService) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // Wyłączamy dla ułatwienia w API REST
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/app.css", "/app.js", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/index.html", "/app.css", "/app.js", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/login", "/register").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
+                .defaultSuccessUrl("/", true)
                 .permitAll()
-            );
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            )
+            .userDetailsService(userService);
 
         return http.build();
     }

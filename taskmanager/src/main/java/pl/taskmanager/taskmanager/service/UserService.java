@@ -67,4 +67,9 @@ public class UserService implements UserDetailsService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
+
+    @Transactional(readOnly = true)
+    public Long findIdByUsername(String username) {
+        return findByUsername(username).getId();
+    }
 }

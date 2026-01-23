@@ -7,10 +7,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import pl.taskmanager.taskmanager.dto.TaskResponse;
 import pl.taskmanager.taskmanager.entity.Task;
 import pl.taskmanager.taskmanager.entity.User;
 import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
 import pl.taskmanager.taskmanager.repository.TaskRepository;
+import pl.taskmanager.taskmanager.repository.UserRepository;
 
 import java.util.Optional;
 
@@ -25,6 +27,12 @@ class TaskServiceTest {
     @Mock
     private TaskRepository taskRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao;
+
     @InjectMocks
     private TaskService taskService;
 
@@ -38,7 +46,7 @@ class TaskServiceTest {
         when(taskRepository.search(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
-        Page<Task> result = taskService.list("user", null, null, null, null, null, Pageable.unpaged());
+        Page<TaskResponse> result = taskService.list("user", null, null, null, null, null, Pageable.unpaged());
 
         assertThat(result).isEmpty();
         verify(taskRepository).search(eq("user"), any(), any(), any(), any(), any(), any());
@@ -50,9 +58,9 @@ class TaskServiceTest {
         task.setTitle("Test");
         when(taskRepository.save(task)).thenReturn(task);
 
-        Task saved = taskService.save(task);
+        TaskResponse saved = taskService.save(task);
 
-        assertThat(saved.getTitle()).isEqualTo("Test");
+        assertThat(saved.title).isEqualTo("Test");
         verify(taskRepository).save(task);
     }
 
@@ -65,9 +73,9 @@ class TaskServiceTest {
         task.setUser(user);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        Task result = taskService.getById(1L, "owner");
+        TaskResponse result = taskService.getById(1L, "owner");
 
-        assertThat(result).isEqualTo(task);
+        assertThat(result.id).isEqualTo(task.getId());
     }
 
     @Test
@@ -102,6 +110,81 @@ class TaskServiceTest {
         taskService.delete(1L, "owner");
 
         verify(taskRepository).delete(task);
+    }
+
+    @Test
+    void shouldCreateTask() {
+        String username = "testuser";
+        User user = new User();
+        user.setId(1L);
+        user.setUsername(username);
+        
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.title = "New Task";
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+
+        TaskResponse result = taskService.create(req, username);
+
+        assertThat(result.title).isEqualTo("New Task");
+        verify(taskRepository).save(any(Task.class));
+    }
+
+    @Test
+    void shouldUpdateTask() {
+        String username = "testuser";
+        User user = new User();
+        user.setId(1L);
+        user.setUsername(username);
+        
+        Task task = new Task();
+        task.setId(1L);
+        task.setTitle("Old Title");
+        task.setUser(user);
+
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.title = "Updated Title";
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.IN_PROGRESS;
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+
+        TaskResponse result = taskService.update(1L, req, username);
+
+        assertThat(result.title).isEqualTo("Updated Title");
+        verify(taskRepository).save(task);
+    }
+
+    @Test
+    void shouldFindAllByUser() {
+        String username = "testuser";
+        User user = new User();
+        user.setUsername(username);
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        when(taskRepository.findAllByUser(user)).thenReturn(java.util.List.of(new Task()));
+
+        java.util.List<TaskResponse> result = taskService.findAllByUser(username);
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void shouldUpdateWithFile() {
+        String username = "testuser";
+        User user = new User();
+        user.setUsername(username);
+        Task task = new Task();
+        task.setUser(user);
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+
+        TaskResponse result = taskService.updateWithFile(1L, "file.txt", username);
+
+        assertThat(result.attachmentFilename).isEqualTo("file.txt");
     }
 
     @Test

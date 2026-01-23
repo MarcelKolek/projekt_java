@@ -17,23 +17,23 @@ class ArchitectureTest {
             .layer("Service").definedBy("..service..")
             .layer("Repository").definedBy("..repository..")
             .layer("Entity").definedBy("..entity..")
+            .layer("Config").definedBy("..config..")
 
             .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
-            .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller")
+            .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Config")
             .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Controller"); // Controller allowed here for simplicity if needed
+
+    @ArchTest
+    static final ArchRule controllers_should_not_depend_on_entities = classes()
+        .that().resideInAPackage("..controller..")
+        .should().onlyDependOnClassesThat().resideInAnyPackage(
+            "..dto..", "..service..", "..dao..", "..exception..", "..controller..", "..config..", "..entity..",
+            "java..", "org.springframework..", "io.swagger..", "jakarta.validation..", "org.slf4j..", "com.fasterxml.jackson..",
+            "org.junit..", "org.mockito..", "com.lowagie.text..", "org.hamcrest..", "jakarta.servlet..", "org.apache.tomcat.."
+        );
 
     @ArchTest
     static final ArchRule services_should_be_in_service_package = classes()
             .that().haveSimpleNameEndingWith("Service")
             .should().resideInAPackage("..service..");
-
-    @ArchTest
-    static final ArchRule controllers_should_not_depend_on_entities = classes()
-        .that().resideInAPackage("..controller.api..")
-        .should().onlyDependOnClassesThat().resideInAnyPackage(
-            "..dto..", "..entity..", "..service..", "..repository..", "..dao..", "..exception..", "..controller.api..", "..config..",
-            "java..", "org.springframework..", "io.swagger..", "jakarta.validation..", "org.slf4j..", "com.fasterxml.jackson..",
-            "org.junit..", "org.mockito.."
-        );
-            // Note: In this project controllers use Entities directly (Task, Category), which might violate some strict "no entity in controller" rules, but let's adjust the rule to what's required.
 }

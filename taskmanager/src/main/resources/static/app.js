@@ -60,25 +60,54 @@ function renderTasks(pageObj) {
   const content = pageObj.content || [];
 
   if (content.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-muted">Brak wyników</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="text-muted">Brak wyników</td></tr>`;
   } else {
-    tbody.innerHTML = content.map(t => `
+    tbody.innerHTML = content.map(t => {
+      let statusLabel = t.status;
+      let badgeClass = "bg-secondary";
+      if (t.status === "TODO") {
+        statusLabel = "Do zrobienia";
+        badgeClass = "bg-secondary";
+      } else if (t.status === "IN_PROGRESS") {
+        statusLabel = "W toku";
+        badgeClass = "bg-warning text-dark";
+      } else if (t.status === "DONE") {
+        statusLabel = "Zrobione";
+        badgeClass = "bg-success";
+      }
+
+      return `
       <tr>
         <td>${t.id}</td>
         <td>${escapeHtml(t.title)}</td>
-        <td><span class="badge text-bg-secondary">${t.status}</span></td>
+        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
         <td>${t.dueDate ?? ""}</td>
         <td>${renderCategoryBadge(t.category)}</td>
+        <td>${renderThumbnail(t.attachmentFilename)}</td>
         <td class="d-flex gap-2">
           <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${t.id})">Edytuj</button>
           <button class="btn btn-sm btn-outline-danger" onclick="removeTask(${t.id})">Usuń</button>
         </td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
   }
 
   document.getElementById("pageInfo").textContent =
     `Strona ${pageObj.number + 1} / ${Math.max(pageObj.totalPages, 1)} • elementów: ${pageObj.totalElements}`;
+}
+
+function renderThumbnail(filename) {
+  if (!filename) return "";
+  const ext = filename.split(".").pop().toLowerCase();
+  const isImage = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+  
+  if (isImage) {
+    return `<a href="/api/v1/tasks/download/${filename}" target="_blank">
+              <img src="/api/v1/tasks/download/${filename}" alt="thumb" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
+            </a>`;
+  }
+  return `<a href="/api/v1/tasks/download/${filename}" class="small">Plik</a>`;
 }
 
 function escapeHtml(s) {
@@ -128,37 +157,102 @@ async function loadTasks() {
 }
 
 async function loadStats() {
-  const s = await fetchJson("/api/v1/tasks/stats"); // albo /stats/jdbc jeśli używasz
+  const s = await fetchJson("/api/v1/tasks/stats/jdbc"); 
   document.getElementById("statTotal").textContent = s.total;
   document.getElementById("statTodo").textContent = s.todo;
   document.getElementById("statInProgress").textContent = s.inProgress;
   document.getElementById("statDone").textContent = s.done;
-  document.getElementById("statPercent").textContent = `Wykonane: ${Number(s.percentDone).toFixed(1)}%`;
+  document.getElementById("statPercent").textContent = `Ukończono: ${Number(s.percentDone).toFixed(1)}%`;
 }
 
 function openNew() {
   document.getElementById("formError").classList.add("d-none");
-  document.getElementById("taskModalTitle").textContent = "Nowy task";
+  document.getElementById("taskModalTitle").textContent = "Nowe zadanie";
   document.getElementById("taskId").value = "";
   document.getElementById("taskTitle").value = "";
   document.getElementById("taskDescription").value = "";
   document.getElementById("taskStatus").value = "TODO";
   document.getElementById("taskDueDate").value = "";
   document.getElementById("taskCategory").value = "";
+  
+  document.getElementById("uploadArea").classList.remove("d-none");
+  document.getElementById("btnUpload").classList.add("d-none");
+  document.getElementById("taskFile").value = "";
+  document.getElementById("attachmentArea").classList.add("d-none");
+  
   bootstrap.Modal.getOrCreateInstance(document.getElementById("taskModal")).show();
 }
 
 async function openEdit(id) {
   const t = await fetchJson(`/api/v1/tasks/${id}`);
   document.getElementById("formError").classList.add("d-none");
-  document.getElementById("taskModalTitle").textContent = `Edycja task #${id}`;
+  document.getElementById("taskModalTitle").textContent = `Edycja zadania #${id}`;
   document.getElementById("taskId").value = t.id;
   document.getElementById("taskTitle").value = t.title ?? "";
   document.getElementById("taskDescription").value = t.description ?? "";
   document.getElementById("taskStatus").value = t.status ?? "TODO";
   document.getElementById("taskDueDate").value = t.dueDate ?? "";
   document.getElementById("taskCategory").value = t.category ? String(t.category.id) : "";
+  
+  document.getElementById("uploadArea").classList.remove("d-none");
+  document.getElementById("btnUpload").classList.remove("d-none");
+  document.getElementById("taskFile").value = "";
+  
+  const attachArea = document.getElementById("attachmentArea");
+  if (t.attachmentFilename) {
+    attachArea.classList.remove("d-none");
+    document.getElementById("attachmentName").textContent = t.attachmentFilename;
+    document.getElementById("btnDownload").href = `/api/v1/tasks/download/${t.attachmentFilename}`;
+  } else {
+    attachArea.classList.add("d-none");
+  }
+
   bootstrap.Modal.getOrCreateInstance(document.getElementById("taskModal")).show();
+}
+
+async function uploadFile() {
+  const taskId = document.getElementById("taskId").value;
+  const fileInput = document.getElementById("taskFile");
+  if (!fileInput.files.length) {
+    alert("Wybierz plik!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]);
+  formData.append("taskId", taskId);
+
+  try {
+    const res = await fetch("/api/v1/tasks/upload", {
+      method: "POST",
+      body: formData
+    });
+    if (!res.ok) throw new Error(await res.text());
+    
+    alert("Plik wgrany pomyślnie!");
+    openEdit(taskId); // odśwież modal
+  } catch (e) {
+    alert("Błąd uploadu: " + e.message);
+  }
+}
+
+async function removeAttachment() {
+  const taskId = document.getElementById("taskId").value;
+  if (!taskId) return;
+  if (!confirm("Czy na pewno chcesz usunąć załącznik?")) return;
+
+  try {
+    const res = await fetch(`/api/v1/tasks/${taskId}/attachment`, {
+      method: "DELETE"
+    });
+    if (!res.ok) throw new Error(await res.text());
+    
+    alert("Załącznik usunięty!");
+    openEdit(taskId); // refresh modal
+    await loadTasks(); // refresh list
+  } catch (e) {
+    alert("Błąd usuwania załącznika: " + e.message);
+  }
 }
 
 async function saveTask() {
@@ -173,11 +267,30 @@ async function saveTask() {
       : null
   };
 
+  const fileInput = document.getElementById("taskFile");
+  const formData = new FormData();
+  formData.append("task", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+  if (fileInput.files.length > 0) {
+    formData.append("file", fileInput.files[0]);
+  }
+
   try {
     if (!id) {
-      await fetchJson("/api/v1/tasks", { method: "POST", body: JSON.stringify(payload) });
+      await fetch("/api/v1/tasks", { 
+        method: "POST", 
+        body: formData 
+      }).then(res => {
+        if (!res.ok) return res.text().then(t => { throw new Error(t) });
+        return res.json();
+      });
     } else {
-      await fetchJson(`/api/v1/tasks/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      await fetch(`/api/v1/tasks/${id}`, { 
+        method: "PUT", 
+        body: formData 
+      }).then(res => {
+        if (!res.ok) return res.text().then(t => { throw new Error(t) });
+        return res.json();
+      });
     }
     bootstrap.Modal.getOrCreateInstance(document.getElementById("taskModal")).hide();
     await loadTasks();
@@ -194,6 +307,23 @@ async function removeTask(id) {
   await fetchJson(`/api/v1/tasks/${id}`, { method: "DELETE" });
   await loadTasks();
   await loadStats();
+}
+
+async function deleteCategory() {
+  const catId = document.getElementById("filterCategory").value;
+  if (!catId) {
+    alert("Wybierz kategorię do usunięcia w filtrze!");
+    return;
+  }
+  if (!confirm("Czy na pewno chcesz usunąć tę kategorię? Zadania zostaną zachowane, ale nie będą miały przypisanej kategorii.")) return;
+
+  try {
+    await fetchJson(`/api/v1/categories/${catId}`, { method: "DELETE" });
+    await loadCategories();
+    await loadTasks();
+  } catch (e) {
+    alert("Błąd podczas usuwania kategorii: " + e.message);
+  }
 }
 
 /* =========================
@@ -286,6 +416,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("btnCreateCategory").addEventListener("click", createCategory);
+  document.getElementById("btnDeleteCategory").addEventListener("click", deleteCategory);
+  document.getElementById("btnUpload").addEventListener("click", uploadFile);
+  document.getElementById("btnRemoveAttachment").addEventListener("click", removeAttachment);
 
   document.getElementById("categoryModal").addEventListener("show.bs.modal", () => {
     resetCatError();

@@ -47,6 +47,9 @@ public class Task {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column
+    private String attachmentFilename;
+
     public Task() {}
 
     @PrePersist
@@ -61,6 +64,7 @@ public class Task {
     }
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
@@ -77,4 +81,6 @@ public class Task {
     public void setTags(java.util.Set<Tag> tags) { this.tags = tags; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public String getAttachmentFilename() { return attachmentFilename; }
+    public void setAttachmentFilename(String attachmentFilename) { this.attachmentFilename = attachmentFilename; }
 }

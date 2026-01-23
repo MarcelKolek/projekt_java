@@ -7,16 +7,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import pl.taskmanager.taskmanager.dto.CategoryRequest;
-import pl.taskmanager.taskmanager.entity.Category;
-import pl.taskmanager.taskmanager.entity.User;
+import pl.taskmanager.taskmanager.dto.CategoryResponse;
 import pl.taskmanager.taskmanager.service.CategoryService;
-import pl.taskmanager.taskmanager.service.UserService;
 
 import java.util.List;
 
@@ -25,12 +25,12 @@ import java.util.List;
 @RequestMapping("/api/v1/categories")
 public class CategoryApiController {
 
-    private final CategoryService categoryService;
-    private final UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(CategoryApiController.class);
 
-    public CategoryApiController(CategoryService categoryService, UserService userService) {
+    private final CategoryService categoryService;
+
+    public CategoryApiController(CategoryService categoryService) {
         this.categoryService = categoryService;
-        this.userService = userService;
     }
 
     @Operation(
@@ -41,9 +41,9 @@ public class CategoryApiController {
             @ApiResponse(responseCode = "200", description = "Lista kategorii zwrócona poprawnie")
     })
     @GetMapping
-    public ResponseEntity<List<Category>> getAll(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        return ResponseEntity.ok(categoryService.getAll(user));
+    public ResponseEntity<List<CategoryResponse>> getAll(@AuthenticationPrincipal UserDetails userDetails) {
+        log.debug("GET /api/v1/categories for user={}", userDetails.getUsername());
+        return ResponseEntity.ok(categoryService.getAll(userDetails.getUsername()));
     }
 
     @Operation(
@@ -55,13 +55,12 @@ public class CategoryApiController {
             @ApiResponse(responseCode = "404", description = "Kategoria nie istnieje", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getById(
+    public ResponseEntity<CategoryResponse> getById(
             @Parameter(description = "ID kategorii", example = "1")
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        return ResponseEntity.ok(categoryService.getById(id, user));
+        return ResponseEntity.ok(categoryService.getById(id, userDetails.getUsername()));
     }
 
     @Operation(
@@ -73,12 +72,12 @@ public class CategoryApiController {
             @ApiResponse(responseCode = "400", description = "Błąd walidacji danych", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Category> create(
+    public ResponseEntity<CategoryResponse> create(
             @Valid @RequestBody CategoryRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        Category saved = categoryService.create(req, user);
+        log.info("Creating category: {} for user: {}", req.name, userDetails.getUsername());
+        CategoryResponse saved = categoryService.create(req, userDetails.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
@@ -92,14 +91,14 @@ public class CategoryApiController {
             @ApiResponse(responseCode = "404", description = "Kategoria nie istnieje", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(
+    public ResponseEntity<CategoryResponse> update(
             @Parameter(description = "ID kategorii", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        return ResponseEntity.ok(categoryService.update(id, req, user));
+        log.info("Updating category id: {} for user: {}", id, userDetails.getUsername());
+        return ResponseEntity.ok(categoryService.update(id, req, userDetails.getUsername()));
     }
 
     @Operation(
@@ -116,8 +115,8 @@ public class CategoryApiController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        categoryService.delete(id, user);
+        log.info("Deleting category id: {} for user: {}", id, userDetails.getUsername());
+        categoryService.delete(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

@@ -9,8 +9,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.taskmanager.taskmanager.dto.CategoryRequest;
-import pl.taskmanager.taskmanager.entity.Category;
-import pl.taskmanager.taskmanager.entity.User;
+import pl.taskmanager.taskmanager.dto.CategoryResponse;
 import pl.taskmanager.taskmanager.service.CategoryService;
 import pl.taskmanager.taskmanager.service.UserService;
 
@@ -42,10 +41,12 @@ class CategoryApiControllerTest {
     @Test
     @WithMockUser(username = "user")
     void shouldGetAllCategories() throws Exception {
-        User user = new User();
-        user.setUsername("user");
-        when(userService.findByUsername("user")).thenReturn(user);
-        when(categoryService.getAll(user)).thenReturn(List.of(new Category("Work", "#ff0000")));
+        CategoryResponse resp = new CategoryResponse();
+        resp.id = 1L;
+        resp.name = "Work";
+        resp.color = "#ff0000";
+        
+        when(categoryService.getAll("user")).thenReturn(List.of(resp));
 
         mockMvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
@@ -55,16 +56,16 @@ class CategoryApiControllerTest {
     @Test
     @WithMockUser(username = "user")
     void shouldCreateCategory() throws Exception {
-        User user = new User();
-        user.setUsername("user");
-        when(userService.findByUsername("user")).thenReturn(user);
-
         CategoryRequest req = new CategoryRequest();
         req.name = "New Cat";
         req.color = "#00ff00";
 
-        Category saved = new Category("New Cat", "#00ff00");
-        when(categoryService.create(any(CategoryRequest.class), eq(user))).thenReturn(saved);
+        CategoryResponse saved = new CategoryResponse();
+        saved.id = 2L;
+        saved.name = "New Cat";
+        saved.color = "#00ff00";
+        
+        when(categoryService.create(any(CategoryRequest.class), eq("user"))).thenReturn(saved);
 
         mockMvc.perform(post("/api/v1/categories")
                         .with(csrf())
@@ -77,10 +78,6 @@ class CategoryApiControllerTest {
     @Test
     @WithMockUser(username = "user")
     void shouldDeleteCategory() throws Exception {
-        User user = new User();
-        user.setUsername("user");
-        when(userService.findByUsername("user")).thenReturn(user);
-
         mockMvc.perform(delete("/api/v1/categories/1").with(csrf()))
                 .andExpect(status().isNoContent());
     }

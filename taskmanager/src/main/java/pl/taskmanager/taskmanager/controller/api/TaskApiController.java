@@ -20,17 +20,20 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
 import pl.taskmanager.taskmanager.dto.TaskRequest;
+import pl.taskmanager.taskmanager.dto.TaskResponse;
 import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
-import pl.taskmanager.taskmanager.entity.Category;
-import pl.taskmanager.taskmanager.entity.Task;
 import pl.taskmanager.taskmanager.entity.TaskStatus;
-import pl.taskmanager.taskmanager.entity.User;
 import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
-import pl.taskmanager.taskmanager.repository.CategoryRepository;
-import pl.taskmanager.taskmanager.repository.TaskRepository;
+import pl.taskmanager.taskmanager.service.TaskService;
 import pl.taskmanager.taskmanager.service.UserService;
 
 import org.springframework.web.multipart.MultipartFile;
+
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfPTable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,19 +49,13 @@ public class TaskApiController {
 
     private static final Logger log = LoggerFactory.getLogger(TaskApiController.class);
 
-    private final TaskRepository taskRepository;
-    private final CategoryRepository categoryRepository;
     private final TaskStatsJdbcDao taskStatsJdbcDao;
     private final UserService userService;
-    private final pl.taskmanager.taskmanager.service.TaskService taskService;
+    private final TaskService taskService;
 
-    public TaskApiController(TaskRepository taskRepository,
-                             CategoryRepository categoryRepository,
-                             TaskStatsJdbcDao taskStatsJdbcDao,
+    public TaskApiController(TaskStatsJdbcDao taskStatsJdbcDao,
                              UserService userService,
-                             pl.taskmanager.taskmanager.service.TaskService taskService) {
-        this.taskRepository = taskRepository;
-        this.categoryRepository = categoryRepository;
+                             TaskService taskService) {
         this.taskStatsJdbcDao = taskStatsJdbcDao;
         this.userService = userService;
         this.taskService = taskService;
@@ -74,7 +71,7 @@ public class TaskApiController {
             @ApiResponse(responseCode = "400", description = "Błędne parametry zapytania", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<Page<Task>> getAll(
+    public ResponseEntity<Page<TaskResponse>> getAll(
             @Parameter(description = "Status zadania: TODO, IN_PROGRESS, DONE")
             @RequestParam(required = false) TaskStatus status,
 
@@ -111,12 +108,12 @@ public class TaskApiController {
             @ApiResponse(responseCode = "404", description = "Zadanie nie istnieje", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getById(
+    public ResponseEntity<TaskResponse> getById(
             @Parameter(description = "ID zadania", example = "1")
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        Task task = taskService.getById(id, userDetails.getUsername());
+        TaskResponse task = taskService.getById(id, userDetails.getUsername());
         return ResponseEntity.ok(task);
     }
 
@@ -126,17 +123,19 @@ public class TaskApiController {
             @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @Content),
             @ApiResponse(responseCode = "404", description = "Nie znaleziono kategorii (categoryId)", content = @Content)
     })
-    @PostMapping
-    public ResponseEntity<Task> create(
-            @Valid @RequestBody TaskRequest req,
+    @PostMapping(consumes = {"application/json", "multipart/form-data"})
+    public ResponseEntity<TaskResponse> create(
+            @Valid @RequestPart("task") TaskRequest req,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails
-    ) {
+    ) throws IOException {
         log.info("Creating new task: {} for user: {}", req.title, userDetails.getUsername());
-        User user = userService.findByUsername(userDetails.getUsername());
-        Task task = new Task();
-        task.setUser(user);
-        applyRequest(task, req, user);
-        Task saved = taskService.save(task);
+        TaskResponse saved = taskService.create(req, userDetails.getUsername());
+
+        if (file != null && !file.isEmpty()) {
+            saved = taskService.updateWithFile(saved.id, handleFileUpload(file, saved.id), userDetails.getUsername());
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
@@ -146,21 +145,20 @@ public class TaskApiController {
             @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @Content),
             @ApiResponse(responseCode = "404", description = "Zadanie lub kategoria nie istnieje", content = @Content)
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<Task> update(
+    @PutMapping(value = "/{id}", consumes = {"application/json", "multipart/form-data"})
+    public ResponseEntity<TaskResponse> update(
             @Parameter(description = "ID zadania", example = "1")
             @PathVariable Long id,
-            @Valid @RequestBody TaskRequest req,
+            @Valid @RequestPart("task") TaskRequest req,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task id=" + id + " not found"));
-        if (!task.getUser().getUsername().equals(userDetails.getUsername())) {
-            throw new ResourceNotFoundException("Task id=" + id + " not found");
+    ) throws IOException {
+        TaskResponse saved = taskService.update(id, req, userDetails.getUsername());
+
+        if (file != null && !file.isEmpty()) {
+            saved = taskService.updateWithFile(saved.id, handleFileUpload(file, saved.id), userDetails.getUsername());
         }
-        User user = task.getUser();
-        applyRequest(task, req, user);
-        Task saved = taskService.save(task);
+
         return ResponseEntity.ok(saved);
     }
 
@@ -188,21 +186,20 @@ public class TaskApiController {
         StringBuilder sb = new StringBuilder();
         sb.append("id,title,description,status,dueDate,categoryId,categoryName,createdAt,updatedAt\n");
 
-        User user = userService.findByUsername(userDetails.getUsername());
-        for (Task t : taskRepository.findAllByUser(user)) {
-            sb.append(csv(t.getId())).append(",");
-            sb.append(csv(t.getTitle())).append(",");
-            sb.append(csv(t.getDescription())).append(",");
-            sb.append(csv(t.getStatus() != null ? t.getStatus().name() : null)).append(",");
-            sb.append(csv(t.getDueDate() != null ? t.getDueDate().toString() : null)).append(",");
+        for (TaskResponse t : taskService.findAllByUser(userDetails.getUsername())) {
+            sb.append(csv(t.id)).append(",");
+            sb.append(csv(t.title)).append(",");
+            sb.append(csv(t.description)).append(",");
+            sb.append(csv(t.status != null ? t.status.name() : null)).append(",");
+            sb.append(csv(t.dueDate != null ? t.dueDate.toString() : null)).append(",");
 
-            Long catId = (t.getCategory() != null ? t.getCategory().getId() : null);
-            String catName = (t.getCategory() != null ? t.getCategory().getName() : null);
+            Long catId = (t.category != null ? t.category.id : null);
+            String catName = (t.category != null ? t.category.name : null);
             sb.append(csv(catId)).append(",");
             sb.append(csv(catName)).append(",");
 
-            sb.append(csv(t.getCreatedAt() != null ? t.getCreatedAt().toString() : null)).append(",");
-            sb.append(csv(t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : null)).append("\n");
+            sb.append(csv(t.createdAt != null ? t.createdAt.toString() : null)).append(",");
+            sb.append(csv(t.updatedAt != null ? t.updatedAt.toString() : null)).append("\n");
         }
 
         byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -213,19 +210,53 @@ public class TaskApiController {
                 .body(bytes);
     }
 
+    @Operation(summary = "Eksport wszystkich zadań do PDF", description = "Zwraca plik tasks.pdf ze wszystkimi zadaniami zalogowanego użytkownika.")
+    @GetMapping("/export/pdf")
+    public ResponseEntity<byte[]> exportPdf(@AuthenticationPrincipal UserDetails userDetails) throws IOException {
+        var tasks = taskService.findAllByUser(userDetails.getUsername());
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, out);
+            document.open();
+            document.add(new Paragraph("Lista Zadań - " + userDetails.getUsername()));
+            document.add(new Paragraph(" "));
+
+            PdfPTable table = new PdfPTable(4);
+            table.addCell("ID");
+            table.addCell("Tytuł");
+            table.addCell("Status");
+            table.addCell("Termin");
+
+            for (TaskResponse t : tasks) {
+                table.addCell(String.valueOf(t.id));
+                table.addCell(t.title);
+                table.addCell(t.status.name());
+                table.addCell(t.dueDate != null ? t.dueDate.toString() : "");
+            }
+
+            document.add(table);
+            document.close();
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"tasks.pdf\"")
+                    .body(out.toByteArray());
+        }
+    }
+
     @Operation(summary = "Statystyki zadań (dashboard)", description = "Zwraca liczniki zalogowanego użytkownika: total/TODO/IN_PROGRESS/DONE oraz procent wykonania (DONE).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Statystyki zwrócone poprawnie")
     })
     @GetMapping("/stats")
     public ResponseEntity<TaskStatsResponse> stats(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        var tasks = taskRepository.findAllByUser(user);
+        var tasks = taskService.findAllByUser(userDetails.getUsername());
 
         long total = tasks.size();
-        long todo = tasks.stream().filter(t -> t.getStatus() == TaskStatus.TODO).count();
-        long inProgress = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).count();
-        long done = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
+        long todo = tasks.stream().filter(t -> t.status == TaskStatus.TODO).count();
+        long inProgress = tasks.stream().filter(t -> t.status == TaskStatus.IN_PROGRESS).count();
+        long done = tasks.stream().filter(t -> t.status == TaskStatus.DONE).count();
 
         double percentDone = (total == 0) ? 0.0 : (done * 100.0 / total);
 
@@ -240,44 +271,62 @@ public class TaskApiController {
     })
     @GetMapping("/stats/jdbc")
     public ResponseEntity<TaskStatsResponse> statsJdbc(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        return ResponseEntity.ok(taskStatsJdbcDao.getStats(user.getId()));
+        // Tu używamy UserDetails aby wyciągnąć ID przez serwis (który może zależeć od User entity, ale kontroler nie powinien)
+        // Ale UserService.findByUsername zwraca User entity.
+        // Rozwiązanie: UserService powinno zwracać UserDto lub oferować metodę findIdByUsername.
+        return ResponseEntity.ok(taskStatsJdbcDao.getStats(userService.findIdByUsername(userDetails.getUsername())));
     }
 
     @Operation(summary = "Upload pliku", description = "Przykładowy upload pliku na serwer.")
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("taskId") Long taskId, @AuthenticationPrincipal UserDetails userDetails) throws IOException {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("Plik jest pusty");
         }
+        
+        String storedFilename = handleFileUpload(file, taskId);
+        taskService.updateWithFile(taskId, storedFilename, userDetails.getUsername());
+        
+        return ResponseEntity.ok("Plik zapisany: " + storedFilename);
+    }
+
+    private String handleFileUpload(MultipartFile file, Long taskId) throws IOException {
         Path uploadDir = Paths.get("uploads");
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }
-        Path destination = uploadDir.resolve(file.getOriginalFilename());
+
+        String originalFilename = file.getOriginalFilename();
+        String storedFilename = taskId + "_" + originalFilename;
+        Path destination = uploadDir.resolve(storedFilename);
+
         Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-        return ResponseEntity.ok("Plik zapisany: " + destination.toString());
+        return storedFilename;
     }
 
-    private void applyRequest(Task task, TaskRequest req, User user) {
-        task.setTitle(req.title);
-        task.setDescription(req.description);
-        if (req.status != null) task.setStatus(req.status);
-        task.setDueDate(req.dueDate);
-
-        if (req.categoryId == null) {
-            task.setCategory(null);
-        } else {
-            Category cat = categoryRepository.findById(req.categoryId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Category id=" + req.categoryId + " not found"));
-            
-            // Check if category belongs to user
-            if (!cat.getUser().getId().equals(user.getId())) {
-                throw new ResourceNotFoundException("Category id=" + req.categoryId + " not found");
-            }
-            
-            task.setCategory(cat);
+    @Operation(summary = "Pobierz plik", description = "Pobiera wcześniej wgrany plik z serwera.")
+    @GetMapping("/download/{filename}")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable String filename) throws IOException {
+        Path filePath = Paths.get("uploads").resolve(filename);
+        if (!Files.exists(filePath)) {
+            throw new ResourceNotFoundException("Plik nie istnieje");
         }
+        org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(filePath.toUri());
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+    @Operation(summary = "Usuń plik", description = "Usuwa załącznik z zadania.")
+    @DeleteMapping("/{id}/attachment")
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+        TaskResponse task = taskService.getById(id, userDetails.getUsername());
+        if (task.attachmentFilename != null) {
+            Path filePath = Paths.get("uploads").resolve(task.attachmentFilename);
+            Files.deleteIfExists(filePath);
+            taskService.updateWithFile(id, null, userDetails.getUsername());
+        }
+        return ResponseEntity.noContent().build();
     }
 
     private String csv(Object value) {
