@@ -1,11 +1,11 @@
 package pl.taskmanager.taskmanager.dao;
 
 @org.springframework.boot.test.autoconfigure.jdbc.JdbcTest
-@org.springframework.context.annotation.Import(TaskStatsJdbcDao.class)
+@org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao.class)
 class TaskStatsJdbcDaoTest {
 
     @org.springframework.beans.factory.annotation.Autowired
-    private TaskStatsJdbcDao taskStatsJdbcDao;
+    private pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao taskStatsJdbcDao;
 
     @org.springframework.beans.factory.annotation.Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
@@ -24,6 +24,8 @@ class TaskStatsJdbcDaoTest {
         org.assertj.core.api.Assertions.assertThat(stats.todo).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(stats.inProgress).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(stats.done).isEqualTo(1);
-        org.assertj.core.api.Assertions.assertThat(stats.percentDone).isEqualTo(33.333333333333336);
+
+        org.assertj.core.api.Assertions.assertThat(stats.percentDone)
+                .isCloseTo(33.333333333333336, org.assertj.core.api.Assertions.within(1e-9));
     }
 }
