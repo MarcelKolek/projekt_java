@@ -1,75 +1,61 @@
 package pl.taskmanager.taskmanager.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import pl.taskmanager.taskmanager.dto.RegisterRequest;
-import pl.taskmanager.taskmanager.entity.User;
-import pl.taskmanager.taskmanager.repository.UserRepository;
+@org.springframework.stereotype.Service
+public class UserService implements org.springframework.security.core.userdetails.UserDetailsService {
 
-import java.util.Set;
-import java.util.stream.Collectors;
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserService.class);
 
-@Service
-public class UserService implements UserDetailsService {
+    private final pl.taskmanager.taskmanager.repository.UserRepository userRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(pl.taskmanager.taskmanager.repository.UserRepository userRepository, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String username) throws org.springframework.security.core.userdetails.UsernameNotFoundException {
         log.debug("Loading user by username: {}", username);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        pl.taskmanager.taskmanager.entity.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found: " + username));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
                 user.getRoles().stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList())
+                        .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                        .collect(java.util.stream.Collectors.toList())
         );
     }
 
-    @Transactional
-    public void register(RegisterRequest req) {
+    @org.springframework.transaction.annotation.Transactional
+    public void register(pl.taskmanager.taskmanager.dto.RegisterRequest req) {
         log.info("Registering new user: {}", req.getUsername());
         if (userRepository.existsByUsername(req.getUsername())) {
             log.warn("Username already exists: {}", req.getUsername());
             throw new IllegalArgumentException("Username already exists");
         }
 
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setEmail(req.getEmail());
-        user.setRoles(Set.of("ROLE_USER"));
+        user.setRoles(java.util.Set.of("ROLE_USER"));
 
         userRepository.save(user);
         log.info("User registered successfully: {}", req.getUsername());
     }
 
-    @Transactional(readOnly = true)
-    public User findByUsername(String username) {
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public pl.taskmanager.taskmanager.entity.User findByUsername(String username) {
+        log.debug("Finding user by username: {}", username);
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found: " + username));
     }
 
-    @Transactional(readOnly = true)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Long findIdByUsername(String username) {
+        log.debug("Finding user id by username: {}", username);
         return findByUsername(username).getId();
     }
 }

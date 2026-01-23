@@ -1,57 +1,52 @@
 package pl.taskmanager.taskmanager.exception;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldHandleNotFound() {
         ResourceNotFoundException ex = new ResourceNotFoundException("Not found");
-        ResponseEntity<Map<String, String>> response = handler.handleNotFound(ex);
-        assertThat(response.getStatusCode().value()).isEqualTo(404);
-        assertThat(response.getBody().get("error")).isEqualTo("Not found");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleNotFound(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldHandleValidation() {
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getAllErrors()).thenReturn(List.of(
-                new FieldError("obj", "field", "message")
+        org.springframework.web.bind.MethodArgumentNotValidException ex = org.mockito.Mockito.mock(org.springframework.web.bind.MethodArgumentNotValidException.class);
+        org.springframework.validation.BindingResult bindingResult = org.mockito.Mockito.mock(org.springframework.validation.BindingResult.class);
+        org.mockito.Mockito.when(ex.getBindingResult()).thenReturn(bindingResult);
+        org.mockito.Mockito.when(bindingResult.getAllErrors()).thenReturn(java.util.List.of(
+                new org.springframework.validation.FieldError("obj", "field", "message")
         ));
 
-        ResponseEntity<Map<String, String>> response = handler.handleValidationExceptions(ex);
-        assertThat(response.getStatusCode().value()).isEqualTo(400);
-        assertThat(response.getBody().get("field")).isEqualTo("message");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleValidationExceptions(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("field")).isEqualTo("message");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldHandleIllegalArgument() {
         IllegalArgumentException ex = new IllegalArgumentException("Illegal");
-        ResponseEntity<Map<String, String>> response = handler.handleIllegalArgument(ex);
-        assertThat(response.getStatusCode().value()).isEqualTo(400);
-        assertThat(response.getBody().get("error")).isEqualTo("Illegal");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleIllegalArgument(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Illegal");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
+    void shouldHandleIOException() {
+        java.io.IOException ex = new java.io.IOException("IO error");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleIOException(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Unexpected file IO error occurred.");
+    }
+
+    @org.junit.jupiter.api.Test
     void shouldHandleGeneralException() {
         Exception ex = new Exception("General");
-        ResponseEntity<Map<String, String>> response = handler.handleGeneralException(ex);
-        assertThat(response.getStatusCode().value()).isEqualTo(500);
-        assertThat(response.getBody().get("error")).isEqualTo("Unexpected server error occurred.");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleGeneralException(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Unexpected server error occurred.");
     }
 }

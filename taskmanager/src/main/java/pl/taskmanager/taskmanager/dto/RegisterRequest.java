@@ -1,27 +1,24 @@
 package pl.taskmanager.taskmanager.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
 public class RegisterRequest {
 
-    @NotBlank(message = "Username cannot be empty")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    private String username;
+    @jakarta.validation.constraints.NotBlank(message = "Username cannot be empty")
+    @jakarta.validation.constraints.Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    private java.lang.String username;
 
-    @NotBlank(message = "Password must be at least 6 characters")
-    @Size(min = 6, message = "Password must be at least 6 characters")
-    private String password;
+    @jakarta.validation.constraints.NotBlank(message = "Password must be at least 6 characters")
+    @jakarta.validation.constraints.Size(min = 6, message = "Password must be at least 6 characters")
+    private java.lang.String password;
 
     @jakarta.validation.constraints.Email(message = "Email must be valid")
-    private String email;
+    private java.lang.String email;
 
     public RegisterRequest() {}
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public java.lang.String getUsername() { return username; }
+    public void setUsername(java.lang.String username) { this.username = username; }
+    public java.lang.String getPassword() { return password; }
+    public void setPassword(java.lang.String password) { this.password = password; }
+    public java.lang.String getEmail() { return email; }
+    public void setEmail(java.lang.String email) { this.email = email; }
 }

@@ -1,53 +1,41 @@
 package pl.taskmanager.taskmanager.controller.view;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import pl.taskmanager.taskmanager.service.UserService;
-
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(RegistrationController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(RegistrationController.class)
 @org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
 class RegistrationControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.test.web.servlet.MockMvc mockMvc;
 
-    @MockitoBean
-    private UserService userService;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldShowRegistrationForm() throws Exception {
-        mockMvc.perform(get("/register"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("register"))
-                .andExpect(model().attributeExists("registerRequest"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/register"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("register"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeExists("registerRequest"));
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldRegisterUserSuccessfully() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/register")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
                         .param("username", "newuser")
                         .param("password", "password")
                         .param("email", "test@test.com"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?registered"));
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl("/login?registered"));
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldShowErrorOnInvalidInput() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/register")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
                         .param("username", "us")
                         .param("password", "123"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("register"));
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("register"));
     }
 }

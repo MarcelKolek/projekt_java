@@ -1,34 +1,25 @@
 package pl.taskmanager.taskmanager.selenium;
 
-import org.junit.jupiter.api.Test;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.boot.test.context.SpringBootTest(webEnvironment = org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SeleniumTest {
 
-    @LocalServerPort
+    @org.springframework.boot.test.web.server.LocalServerPort
     private int port;
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldLoadLoginPage() {
         
         try {
-            ChromeOptions options = new ChromeOptions();
+            org.openqa.selenium.chrome.ChromeOptions options = new org.openqa.selenium.chrome.ChromeOptions();
             options.addArguments("--headless");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
-            WebDriver driver = new ChromeDriver(options);
+            org.openqa.selenium.WebDriver driver = new org.openqa.selenium.chrome.ChromeDriver(options);
             
             try {
                 driver.get("http://localhost:" + port + "/login");
                 Thread.sleep(1000);
-                assertThat(driver.getTitle()).isNotEmpty();
+                org.assertj.core.api.Assertions.assertThat(driver.getTitle()).isNotEmpty();
             } finally {
                 driver.quit();
             }

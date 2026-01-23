@@ -1,205 +1,192 @@
 package pl.taskmanager.taskmanager.controller.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
-import pl.taskmanager.taskmanager.dto.TaskRequest;
-import pl.taskmanager.taskmanager.dto.TaskResponse;
-import pl.taskmanager.taskmanager.entity.TaskStatus;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import org.springframework.mock.web.MockMultipartFile;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-
-@WebMvcTest(TaskApiController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(TaskApiController.class)
 @org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
 class TaskApiControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.test.web.servlet.MockMvc mockMvc;
 
-    @MockitoBean
-    private TaskStatsJdbcDao taskStatsJdbcDao;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao taskStatsJdbcDao;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.TaskService taskService;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.CategoryService categoryService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.CsvService csvService;
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.PdfService pdfService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.FileService fileService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldGetAllTasks() throws Exception {
-        when(taskService.list(eq("user"), any(), any(), any(), any(), any(), any()))
+        org.mockito.Mockito.when(taskService.list(org.mockito.Mockito.eq("user"), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(org.springframework.data.domain.Page.empty());
-        mockMvc.perform(get("/api/v1/tasks"))
-                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldCreateTask() throws Exception {
-        TaskRequest req = new TaskRequest();
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
         req.title = "New Task";
-        req.status = TaskStatus.TODO;
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
 
-        TaskResponse saved = new TaskResponse();
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = new pl.taskmanager.taskmanager.dto.TaskResponse();
         saved.id = 1L;
         saved.title = "New Task";
-        when(taskService.create(any(TaskRequest.class), eq("user"))).thenReturn(saved);
+        org.mockito.Mockito.when(taskService.create(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.dto.TaskRequest.class), org.mockito.Mockito.eq("user"))).thenReturn(saved);
 
-        MockMultipartFile taskPart = new MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
+        org.springframework.mock.web.MockMultipartFile taskPart = new org.springframework.mock.web.MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
 
-        mockMvc.perform(multipart("/api/v1/tasks")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks")
                         .file(taskPart)
-                        .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("New Task"));
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("New Task"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldCreateTaskWithFile() throws Exception {
-        TaskRequest req = new TaskRequest();
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
         req.title = "With File";
-        req.status = TaskStatus.TODO;
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
 
-        TaskResponse saved = new TaskResponse();
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = new pl.taskmanager.taskmanager.dto.TaskResponse();
         saved.id = 10L;
         saved.title = "With File";
-        when(taskService.create(any(TaskRequest.class), eq("user"))).thenReturn(saved);
-        when(taskService.updateWithFile(eq(10L), any(), eq("user"))).thenReturn(saved);
+        org.mockito.Mockito.when(taskService.create(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.dto.TaskRequest.class), org.mockito.Mockito.eq("user"))).thenReturn(saved);
+        org.mockito.Mockito.when(taskService.updateWithFile(org.mockito.Mockito.eq(10L), org.mockito.ArgumentMatchers.any(), org.mockito.Mockito.eq("user"))).thenReturn(saved);
 
-        MockMultipartFile taskPart = new MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
-        MockMultipartFile filePart = new MockMultipartFile("file", "test.txt", "text/plain", "hello".getBytes());
+        org.springframework.mock.web.MockMultipartFile taskPart = new org.springframework.mock.web.MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
+        org.springframework.mock.web.MockMultipartFile filePart = new org.springframework.mock.web.MockMultipartFile("file", "test.txt", "text/plain", "hello".getBytes());
 
-        mockMvc.perform(multipart("/api/v1/tasks")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks")
                         .file(taskPart)
                         .file(filePart)
-                        .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("With File"));
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("With File"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldGetTaskById() throws Exception {
-        TaskResponse task = new TaskResponse();
+        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
         task.id = 1L;
         task.title = "Found";
-        when(taskService.getById(1L, "user")).thenReturn(task);
+        org.mockito.Mockito.when(taskService.getById(1L, "user")).thenReturn(task);
 
-        mockMvc.perform(get("/api/v1/tasks/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Found"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/1"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("Found"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldDeleteTask() throws Exception {
-        mockMvc.perform(delete("/api/v1/tasks/1").with(csrf()))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/tasks/1").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldDenyAnonymous() throws Exception {
-        mockMvc.perform(get("/api/v1/tasks"))
-                .andExpect(status().isFound());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isFound());
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldHandleNotFoundInUpdate() throws Exception {
-        when(taskService.update(eq(999L), any(), eq("user"))).thenThrow(new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Task not found"));
+        org.mockito.Mockito.when(taskService.update(org.mockito.Mockito.eq(999L), org.mockito.ArgumentMatchers.any(), org.mockito.Mockito.eq("user"))).thenThrow(new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Task not found"));
 
-        TaskRequest req = new TaskRequest();
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
         req.title = "Update";
-        req.status = TaskStatus.TODO;
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
 
-        MockMultipartFile taskPart = new MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
+        org.springframework.mock.web.MockMultipartFile taskPart = new org.springframework.mock.web.MockMultipartFile("task", "", "application/json", objectMapper.writeValueAsString(req).getBytes());
 
-        mockMvc.perform(multipart("/api/v1/tasks/999")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks/999")
                         .file(taskPart)
-                        .with(csrf())
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
                         .with(request -> { request.setMethod("PUT"); return request; }))
-                .andExpect(status().isNotFound());
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldExportCsv() throws Exception {
-        when(taskService.findAllByUser("user")).thenReturn(java.util.List.of());
+        org.mockito.Mockito.when(taskService.findAllByUser("user")).thenReturn(java.util.List.of());
 
-        mockMvc.perform(get("/api/v1/tasks/export/csv"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Content-Type", "text/csv; charset=utf-8"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/export/csv"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "text/csv; charset=utf-8"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldExportPdf() throws Exception {
-        when(taskService.findAllByUser("user")).thenReturn(java.util.List.of());
+        org.mockito.Mockito.when(taskService.findAllByUser("user")).thenReturn(java.util.List.of());
 
-        mockMvc.perform(get("/api/v1/tasks/export/pdf"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Content-Type", "application/pdf"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/export/pdf"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/pdf"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldStats() throws Exception {
-        when(taskService.findAllByUser("user")).thenReturn(java.util.List.of());
+        org.mockito.Mockito.when(taskService.getStats("user")).thenReturn(new pl.taskmanager.taskmanager.dto.TaskStatsResponse(0, 0, 0, 0, 0.0));
 
-        mockMvc.perform(get("/api/v1/tasks/stats"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(0));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/stats"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.total").value(0));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldStatsJdbc() throws Exception {
-        when(userService.findIdByUsername("user")).thenReturn(1L);
-        when(taskStatsJdbcDao.getStats(1L)).thenReturn(new pl.taskmanager.taskmanager.dto.TaskStatsResponse(5, 2, 1, 2, 40.0));
+        org.mockito.Mockito.when(userService.findIdByUsername("user")).thenReturn(1L);
+        org.mockito.Mockito.when(taskStatsJdbcDao.getStats(1L)).thenReturn(new pl.taskmanager.taskmanager.dto.TaskStatsResponse(5, 2, 1, 2, 40.0));
 
-        mockMvc.perform(get("/api/v1/tasks/stats/jdbc"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(5))
-                .andExpect(jsonPath("$.percentDone").value(40.0));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/stats/jdbc"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.total").value(5))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.percentDone").value(40.0));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldUploadFile() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
         
-        TaskResponse task = new TaskResponse();
+        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
         task.id = 1L;
         task.attachmentFilename = "1_test.txt";
         
-        when(taskService.updateWithFile(eq(1L), any(), eq("user"))).thenReturn(task);
+        org.mockito.Mockito.when(taskService.updateWithFile(org.mockito.Mockito.eq(1L), org.mockito.ArgumentMatchers.any(), org.mockito.Mockito.eq("user"))).thenReturn(task);
 
-        mockMvc.perform(multipart("/api/v1/tasks/upload")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks/upload")
                         .file(file)
                         .param("taskId", "1")
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Plik zapisany")));
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(org.hamcrest.Matchers.containsString("Plik zapisany")));
     }
 }

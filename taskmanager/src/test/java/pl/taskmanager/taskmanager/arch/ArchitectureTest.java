@@ -1,17 +1,10 @@
 package pl.taskmanager.taskmanager.arch;
 
-import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchTest;
-import com.tngtech.archunit.lang.ArchRule;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
-
-@AnalyzeClasses(packages = "pl.taskmanager.taskmanager")
+@com.tngtech.archunit.junit.AnalyzeClasses(packages = "pl.taskmanager.taskmanager")
 class ArchitectureTest {
 
-    @ArchTest
-    static final ArchRule layers_should_be_respected = layeredArchitecture()
+    @com.tngtech.archunit.junit.ArchTest
+    static final com.tngtech.archunit.lang.ArchRule layers_should_be_respected = com.tngtech.archunit.library.Architectures.layeredArchitecture()
             .consideringAllDependencies()
             .layer("Controller").definedBy("..controller..")
             .layer("Service").definedBy("..service..")
@@ -21,10 +14,10 @@ class ArchitectureTest {
 
             .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
             .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Config")
-            .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Controller"); // Controller allowed here for simplicity if needed
+            .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Controller");
 
-    @ArchTest
-    static final ArchRule controllers_should_not_depend_on_entities = classes()
+    @com.tngtech.archunit.junit.ArchTest
+    static final com.tngtech.archunit.lang.ArchRule controllers_should_not_depend_on_entities = com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes()
         .that().resideInAPackage("..controller..")
         .should().onlyDependOnClassesThat().resideInAnyPackage(
             "..dto..", "..service..", "..dao..", "..exception..", "..controller..", "..config..", "..entity..",
@@ -32,8 +25,8 @@ class ArchitectureTest {
             "org.junit..", "org.mockito..", "com.lowagie.text..", "org.hamcrest..", "jakarta.servlet..", "org.apache.tomcat.."
         );
 
-    @ArchTest
-    static final ArchRule services_should_be_in_service_package = classes()
+    @com.tngtech.archunit.junit.ArchTest
+    static final com.tngtech.archunit.lang.ArchRule services_should_be_in_service_package = com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes()
             .that().haveSimpleNameEndingWith("Service")
             .should().resideInAPackage("..service..");
 }

@@ -1,9 +1,9 @@
 package pl.taskmanager.taskmanager.dto;
 
 public class CategoryResponse {
-    public Long id;
-    public String name;
-    public String color;
+    public java.lang.Long id;
+    public java.lang.String name;
+    public java.lang.String color;
 
     public CategoryResponse() {}
 
@@ -13,7 +13,7 @@ public class CategoryResponse {
         this.color = category.getColor();
     }
 
-    public CategoryResponse(Long id, String name, String color) {
+    public CategoryResponse(java.lang.Long id, java.lang.String name, java.lang.String color) {
         this.id = id;
         this.name = name;
         this.color = color;

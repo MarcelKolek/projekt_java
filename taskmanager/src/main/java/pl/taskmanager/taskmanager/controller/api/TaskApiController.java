@@ -1,334 +1,229 @@
 package pl.taskmanager.taskmanager.controller.api;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
-import pl.taskmanager.taskmanager.dto.TaskRequest;
-import pl.taskmanager.taskmanager.dto.TaskResponse;
-import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
-import pl.taskmanager.taskmanager.entity.TaskStatus;
-import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
-import pl.taskmanager.taskmanager.service.TaskService;
-import pl.taskmanager.taskmanager.service.UserService;
-
-import org.springframework.web.multipart.MultipartFile;
-
-import com.lowagie.text.Document;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.pdf.PdfWriter;
-import com.lowagie.text.pdf.PdfPTable;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-
-@Tag(name = "Tasks", description = "Operacje na zadaniach")
-@RestController
-@RequestMapping("/api/v1/tasks")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tasks", description = "Operacje na zadaniach")
+@org.springframework.web.bind.annotation.RestController
+@org.springframework.web.bind.annotation.RequestMapping("/api/v1/tasks")
 public class TaskApiController {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskApiController.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TaskApiController.class);
 
-    private final TaskStatsJdbcDao taskStatsJdbcDao;
-    private final UserService userService;
-    private final TaskService taskService;
+    private final pl.taskmanager.taskmanager.service.TaskService taskService;
+    private final pl.taskmanager.taskmanager.service.CsvService csvService;
+    private final pl.taskmanager.taskmanager.service.PdfService pdfService;
+    private final pl.taskmanager.taskmanager.service.FileService fileService;
 
-    public TaskApiController(TaskStatsJdbcDao taskStatsJdbcDao,
-                             UserService userService,
-                             TaskService taskService) {
-        this.taskStatsJdbcDao = taskStatsJdbcDao;
-        this.userService = userService;
+    public TaskApiController(
+            pl.taskmanager.taskmanager.service.TaskService taskService,
+            pl.taskmanager.taskmanager.service.CsvService csvService,
+            pl.taskmanager.taskmanager.service.PdfService pdfService,
+            pl.taskmanager.taskmanager.service.FileService fileService
+    ) {
         this.taskService = taskService;
+        this.csvService = csvService;
+        this.pdfService = pdfService;
+        this.fileService = fileService;
     }
 
-    @Operation(
+    @io.swagger.v3.oas.annotations.Operation(
             summary = "Lista zadań (paginacja + filtry + wyszukiwanie)",
             description = "Zwraca paginowaną listę zadań zalogowanego użytkownika. Obsługuje filtry: status, categoryId, dueBefore/dueAfter oraz wyszukiwanie po tytule (q). " +
                     "Sortowanie i paginacja przez standardowe parametry Spring: page, size, sort."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista zadań zwrócona poprawnie"),
-            @ApiResponse(responseCode = "400", description = "Błędne parametry zapytania", content = @Content)
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Lista zadań zwrócona poprawnie"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Błędne parametry zapytania", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @GetMapping
-    public ResponseEntity<Page<TaskResponse>> getAll(
-            @Parameter(description = "Status zadania: TODO, IN_PROGRESS, DONE")
-            @RequestParam(required = false) TaskStatus status,
+    @org.springframework.web.bind.annotation.GetMapping
+    public org.springframework.http.ResponseEntity<org.springframework.data.domain.Page<pl.taskmanager.taskmanager.dto.TaskResponse>> getAll(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Status zadania: TODO, IN_PROGRESS, DONE")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) pl.taskmanager.taskmanager.entity.TaskStatus status,
 
-            @Parameter(description = "ID kategorii")
-            @RequestParam(required = false) Long categoryId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID kategorii")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) java.lang.Long categoryId,
 
-            @Parameter(description = "Wyszukiwanie po tytule (LIKE, case-insensitive)")
-            @RequestParam(required = false) String q,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Wyszukiwanie po tytule (LIKE, case-insensitive)")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) java.lang.String q,
 
-            @Parameter(description = "Tylko zadania z dueDate < dueBefore (format yyyy-MM-dd)")
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate dueBefore,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tylko zadania z dueDate < dueBefore (format yyyy-MM-dd)")
+            @org.springframework.web.bind.annotation.RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dueBefore,
 
-            @Parameter(description = "Tylko zadania z dueDate > dueAfter (format yyyy-MM-dd)")
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate dueAfter,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Tylko zadania z dueDate > dueAfter (format yyyy-MM-dd)")
+            @org.springframework.web.bind.annotation.RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dueAfter,
 
-            @Parameter(hidden = true)
-            @PageableDefault(size = 10) Pageable pageable,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true)
+            @org.springframework.data.web.PageableDefault(size = 10) org.springframework.data.domain.Pageable pageable,
 
-            @AuthenticationPrincipal UserDetails userDetails
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
         log.debug("GET /api/v1/tasks username={}, status={}, categoryId={}, q={}", userDetails.getUsername(), status, categoryId, q);
-        return ResponseEntity.ok(
+        return org.springframework.http.ResponseEntity.ok(
                 taskService.list(userDetails.getUsername(), status, categoryId, q, dueBefore, dueAfter, pageable)
         );
     }
 
-    @Operation(summary = "Pobierz zadanie po ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Zadanie znalezione"),
-            @ApiResponse(responseCode = "404", description = "Zadanie nie istnieje", content = @Content)
+    @io.swagger.v3.oas.annotations.Operation(summary = "Pobierz zadanie po ID")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Zadanie znalezione"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Zadanie nie istnieje", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskResponse> getById(
-            @Parameter(description = "ID zadania", example = "1")
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
+    @org.springframework.web.bind.annotation.GetMapping("/{id}")
+    public org.springframework.http.ResponseEntity<pl.taskmanager.taskmanager.dto.TaskResponse> getById(
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID zadania", example = "1")
+            @org.springframework.web.bind.annotation.PathVariable java.lang.Long id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
-        TaskResponse task = taskService.getById(id, userDetails.getUsername());
-        return ResponseEntity.ok(task);
+        pl.taskmanager.taskmanager.dto.TaskResponse task = taskService.getById(id, userDetails.getUsername());
+        return org.springframework.http.ResponseEntity.ok(task);
     }
 
-    @Operation(summary = "Utwórz nowe zadanie")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Zadanie utworzone"),
-            @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Nie znaleziono kategorii (categoryId)", content = @Content)
+    @io.swagger.v3.oas.annotations.Operation(summary = "Utwórz nowe zadanie")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Zadanie utworzone"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @io.swagger.v3.oas.annotations.media.Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Nie znaleziono kategorii (categoryId)", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PostMapping(consumes = {"application/json", "multipart/form-data"})
-    public ResponseEntity<TaskResponse> create(
-            @Valid @RequestPart("task") TaskRequest req,
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) throws IOException {
+    @org.springframework.web.bind.annotation.PostMapping(consumes = {"application/json", "multipart/form-data"})
+    public org.springframework.http.ResponseEntity<pl.taskmanager.taskmanager.dto.TaskResponse> create(
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestPart("task") pl.taskmanager.taskmanager.dto.TaskRequest req,
+            @org.springframework.web.bind.annotation.RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) throws java.io.IOException {
         log.info("Creating new task: {} for user: {}", req.title, userDetails.getUsername());
-        TaskResponse saved = taskService.create(req, userDetails.getUsername());
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = taskService.create(req, userDetails.getUsername());
 
         if (file != null && !file.isEmpty()) {
-            saved = taskService.updateWithFile(saved.id, handleFileUpload(file, saved.id), userDetails.getUsername());
+            saved = taskService.updateWithFile(saved.id, fileService.storeFile(file, saved.id), userDetails.getUsername());
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(saved);
     }
 
-    @Operation(summary = "Edytuj zadanie (lub zmień status)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Zadanie zaktualizowane"),
-            @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Zadanie lub kategoria nie istnieje", content = @Content)
+    @io.swagger.v3.oas.annotations.Operation(summary = "Edytuj zadanie (lub zmień status)")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Zadanie zaktualizowane"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @io.swagger.v3.oas.annotations.media.Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Zadanie lub kategoria nie istnieje", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PutMapping(value = "/{id}", consumes = {"application/json", "multipart/form-data"})
-    public ResponseEntity<TaskResponse> update(
-            @Parameter(description = "ID zadania", example = "1")
-            @PathVariable Long id,
-            @Valid @RequestPart("task") TaskRequest req,
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) throws IOException {
-        TaskResponse saved = taskService.update(id, req, userDetails.getUsername());
+    @org.springframework.web.bind.annotation.PutMapping(value = "/{id}", consumes = {"application/json", "multipart/form-data"})
+    public org.springframework.http.ResponseEntity<pl.taskmanager.taskmanager.dto.TaskResponse> update(
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID zadania", example = "1")
+            @org.springframework.web.bind.annotation.PathVariable java.lang.Long id,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestPart("task") pl.taskmanager.taskmanager.dto.TaskRequest req,
+            @org.springframework.web.bind.annotation.RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) throws java.io.IOException {
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = taskService.update(id, req, userDetails.getUsername());
 
         if (file != null && !file.isEmpty()) {
-            saved = taskService.updateWithFile(saved.id, handleFileUpload(file, saved.id), userDetails.getUsername());
+            saved = taskService.updateWithFile(saved.id, fileService.storeFile(file, saved.id), userDetails.getUsername());
         }
 
-        return ResponseEntity.ok(saved);
+        return org.springframework.http.ResponseEntity.ok(saved);
     }
 
-    @Operation(summary = "Usuń zadanie")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Zadanie usunięte"),
-            @ApiResponse(responseCode = "404", description = "Zadanie nie istnieje", content = @Content)
+    @io.swagger.v3.oas.annotations.Operation(summary = "Usuń zadanie")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Zadanie usunięte"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Zadanie nie istnieje", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
-            @Parameter(description = "ID zadania", example = "1")
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public org.springframework.http.ResponseEntity<java.lang.Void> delete(
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID zadania", example = "1")
+            @org.springframework.web.bind.annotation.PathVariable java.lang.Long id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
         taskService.delete(id, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
+        return org.springframework.http.ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Eksport wszystkich zadań do CSV", description = "Zwraca plik tasks.csv ze wszystkimi zadaniami zalogowanego użytkownika.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Plik CSV zwrócony poprawnie")
+    @io.swagger.v3.oas.annotations.Operation(summary = "Eksport wszystkich zadań do CSV", description = "Zwraca plik tasks.csv ze wszystkimi zadaniami zalogowanego użytkownika.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Plik CSV zwrócony poprawnie")
     })
-    @GetMapping("/export/csv")
-    public ResponseEntity<byte[]> exportCsv(@AuthenticationPrincipal UserDetails userDetails) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("id,title,description,status,dueDate,categoryId,categoryName,createdAt,updatedAt\n");
-
-        for (TaskResponse t : taskService.findAllByUser(userDetails.getUsername())) {
-            sb.append(csv(t.id)).append(",");
-            sb.append(csv(t.title)).append(",");
-            sb.append(csv(t.description)).append(",");
-            sb.append(csv(t.status != null ? t.status.name() : null)).append(",");
-            sb.append(csv(t.dueDate != null ? t.dueDate.toString() : null)).append(",");
-
-            Long catId = (t.category != null ? t.category.id : null);
-            String catName = (t.category != null ? t.category.name : null);
-            sb.append(csv(catId)).append(",");
-            sb.append(csv(catName)).append(",");
-
-            sb.append(csv(t.createdAt != null ? t.createdAt.toString() : null)).append(",");
-            sb.append(csv(t.updatedAt != null ? t.updatedAt.toString() : null)).append("\n");
-        }
-
-        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
-
-        return ResponseEntity.ok()
-                .header("Content-Type", "text/csv; charset=utf-8")
-                .header("Content-Disposition", "attachment; filename=\"tasks.csv\"")
+    @org.springframework.web.bind.annotation.GetMapping("/export/csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportCsv(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) {
+        byte[] bytes = csvService.exportTasksToCsv(taskService.findAllByUser(userDetails.getUsername()));
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/csv; charset=utf-8")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tasks.csv\"")
                 .body(bytes);
     }
 
-    @Operation(summary = "Eksport wszystkich zadań do PDF", description = "Zwraca plik tasks.pdf ze wszystkimi zadaniami zalogowanego użytkownika.")
-    @GetMapping("/export/pdf")
-    public ResponseEntity<byte[]> exportPdf(@AuthenticationPrincipal UserDetails userDetails) throws IOException {
-        var tasks = taskService.findAllByUser(userDetails.getUsername());
-
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Document document = new Document();
-            PdfWriter.getInstance(document, out);
-            document.open();
-            document.add(new Paragraph("Lista Zadań - " + userDetails.getUsername()));
-            document.add(new Paragraph(" "));
-
-            PdfPTable table = new PdfPTable(4);
-            table.addCell("ID");
-            table.addCell("Tytuł");
-            table.addCell("Status");
-            table.addCell("Termin");
-
-            for (TaskResponse t : tasks) {
-                table.addCell(String.valueOf(t.id));
-                table.addCell(t.title);
-                table.addCell(t.status.name());
-                table.addCell(t.dueDate != null ? t.dueDate.toString() : "");
-            }
-
-            document.add(table);
-            document.close();
-
-            return ResponseEntity.ok()
-                    .header("Content-Type", "application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"tasks.pdf\"")
-                    .body(out.toByteArray());
-        }
+    @io.swagger.v3.oas.annotations.Operation(summary = "Eksport wszystkich zadań do PDF", description = "Zwraca plik tasks.pdf ze wszystkimi zadaniami zalogowanego użytkownika.")
+    @org.springframework.web.bind.annotation.GetMapping("/export/pdf")
+    public org.springframework.http.ResponseEntity<byte[]> exportPdf(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) throws java.io.IOException {
+        byte[] bytes = pdfService.exportTasksToPdf(
+                taskService.findAllByUser(userDetails.getUsername()),
+                userDetails.getUsername()
+        );
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/pdf")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tasks.pdf\"")
+                .body(bytes);
     }
 
-    @Operation(summary = "Statystyki zadań (dashboard)", description = "Zwraca liczniki zalogowanego użytkownika: total/TODO/IN_PROGRESS/DONE oraz procent wykonania (DONE).")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Statystyki zwrócone poprawnie")
-    })
-    @GetMapping("/stats")
-    public ResponseEntity<TaskStatsResponse> stats(@AuthenticationPrincipal UserDetails userDetails) {
-        var tasks = taskService.findAllByUser(userDetails.getUsername());
-
-        long total = tasks.size();
-        long todo = tasks.stream().filter(t -> t.status == TaskStatus.TODO).count();
-        long inProgress = tasks.stream().filter(t -> t.status == TaskStatus.IN_PROGRESS).count();
-        long done = tasks.stream().filter(t -> t.status == TaskStatus.DONE).count();
-
-        double percentDone = (total == 0) ? 0.0 : (done * 100.0 / total);
-
-        return ResponseEntity.ok(new TaskStatsResponse(total, todo, inProgress, done, percentDone));
-    }
-
-    @Operation(summary = "Statystyki zadań (dashboard) - JdbcTemplate",
-            description = "Zwraca statystyki liczone przez DAO z JdbcTemplate dla zalogowanego użytkownika."
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "Statystyki zadań (dashboard)",
+            description = "Zwraca liczniki zalogowanego użytkownika: total/TODO/IN_PROGRESS/DONE oraz procent wykonania (DONE). Liczone przez DAO JdbcTemplate w warstwie serwisu."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Statystyki zwrócone poprawnie")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Statystyki zwrócone poprawnie")
     })
-    @GetMapping("/stats/jdbc")
-    public ResponseEntity<TaskStatsResponse> statsJdbc(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(taskStatsJdbcDao.getStats(userService.findIdByUsername(userDetails.getUsername())));
+    @org.springframework.web.bind.annotation.GetMapping("/stats")
+    public org.springframework.http.ResponseEntity<pl.taskmanager.taskmanager.dto.TaskStatsResponse> stats(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) {
+        return org.springframework.http.ResponseEntity.ok(taskService.getStats(userDetails.getUsername()));
     }
 
-    @Operation(summary = "Upload pliku", description = "Przykładowy upload pliku na serwer.")
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("taskId") Long taskId, @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+    @io.swagger.v3.oas.annotations.Operation(summary = "Upload pliku", description = "Przykładowy upload pliku na serwer.")
+    @org.springframework.web.bind.annotation.PostMapping(value = "/upload", consumes = "multipart/form-data")
+    public org.springframework.http.ResponseEntity<java.lang.String> uploadFile(
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @org.springframework.web.bind.annotation.RequestParam("taskId") java.lang.Long taskId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) throws java.io.IOException {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Plik jest pusty");
+            return org.springframework.http.ResponseEntity.badRequest().body("Plik jest pusty");
         }
-        
-        String storedFilename = handleFileUpload(file, taskId);
+
+        java.lang.String storedFilename = fileService.storeFile(file, taskId);
         taskService.updateWithFile(taskId, storedFilename, userDetails.getUsername());
-        
-        return ResponseEntity.ok("Plik zapisany: " + storedFilename);
+
+        return org.springframework.http.ResponseEntity.ok("Plik zapisany: " + storedFilename);
     }
 
-    private String handleFileUpload(MultipartFile file, Long taskId) throws IOException {
-        Path uploadDir = Paths.get("uploads");
-        if (!Files.exists(uploadDir)) {
-            Files.createDirectories(uploadDir);
-        }
-
-        String originalFilename = file.getOriginalFilename();
-        String storedFilename = taskId + "_" + originalFilename;
-        Path destination = uploadDir.resolve(storedFilename);
-
-        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-        return storedFilename;
-    }
-
-    @Operation(summary = "Pobierz plik", description = "Pobiera wcześniej wgrany plik z serwera.")
-    @GetMapping("/download/{filename}")
-    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable String filename) throws IOException {
-        Path filePath = Paths.get("uploads").resolve(filename);
-        if (!Files.exists(filePath)) {
-            throw new ResourceNotFoundException("Plik nie istnieje");
-        }
-        org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(filePath.toUri());
-        return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+    @io.swagger.v3.oas.annotations.Operation(summary = "Pobierz plik", description = "Pobiera wcześniej wgrany plik z serwera.")
+    @org.springframework.web.bind.annotation.GetMapping("/download/{filename}")
+    public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> downloadFile(
+            @org.springframework.web.bind.annotation.PathVariable java.lang.String filename
+    ) throws java.io.IOException {
+        org.springframework.core.io.Resource resource = fileService.loadFileAsResource(filename);
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 
-    @Operation(summary = "Usuń plik", description = "Usuwa załącznik z zadania.")
-    @DeleteMapping("/{id}/attachment")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) throws IOException {
-        TaskResponse task = taskService.getById(id, userDetails.getUsername());
+    @io.swagger.v3.oas.annotations.Operation(summary = "Usuń plik", description = "Usuwa załącznik z zadania.")
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}/attachment")
+    public org.springframework.http.ResponseEntity<java.lang.Void> deleteAttachment(
+            @org.springframework.web.bind.annotation.PathVariable java.lang.Long id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    ) throws java.io.IOException {
+        pl.taskmanager.taskmanager.dto.TaskResponse task = taskService.getById(id, userDetails.getUsername());
         if (task.attachmentFilename != null) {
-            Path filePath = Paths.get("uploads").resolve(task.attachmentFilename);
-            Files.deleteIfExists(filePath);
+            fileService.deleteFile(task.attachmentFilename);
             taskService.updateWithFile(id, null, userDetails.getUsername());
         }
-        return ResponseEntity.noContent().build();
-    }
-
-    private String csv(Object value) {
-        if (value == null) return "";
-        String s = String.valueOf(value).replace("\"", "\"\"");
-        return "\"" + s + "\"";
+        return org.springframework.http.ResponseEntity.noContent().build();
     }
 }

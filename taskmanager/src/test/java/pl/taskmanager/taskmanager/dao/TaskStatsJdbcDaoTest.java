@@ -1,25 +1,16 @@
 package pl.taskmanager.taskmanager.dao;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
-import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@JdbcTest
-@Import(TaskStatsJdbcDao.class)
+@org.springframework.boot.test.autoconfigure.jdbc.JdbcTest
+@org.springframework.context.annotation.Import(TaskStatsJdbcDao.class)
 class TaskStatsJdbcDaoTest {
 
-    @Autowired
+    @org.springframework.beans.factory.annotation.Autowired
     private TaskStatsJdbcDao taskStatsJdbcDao;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldGetStats() {
         jdbcTemplate.execute("CREATE TABLE tasks (id IDENTITY PRIMARY KEY, status VARCHAR(255), user_id BIGINT)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('TODO', 1)");
@@ -27,12 +18,12 @@ class TaskStatsJdbcDaoTest {
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('DONE', 1)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('TODO', 2)"); // other user
 
-        TaskStatsResponse stats = taskStatsJdbcDao.getStats(1L);
+        pl.taskmanager.taskmanager.dto.TaskStatsResponse stats = taskStatsJdbcDao.getStats(1L);
 
-        assertThat(stats.total).isEqualTo(3);
-        assertThat(stats.todo).isEqualTo(1);
-        assertThat(stats.inProgress).isEqualTo(1);
-        assertThat(stats.done).isEqualTo(1);
-        assertThat(stats.percentDone).isEqualTo(33.333333333333336);
+        org.assertj.core.api.Assertions.assertThat(stats.total).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(stats.todo).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(stats.inProgress).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(stats.done).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(stats.percentDone).isEqualTo(33.333333333333336);
     }
 }

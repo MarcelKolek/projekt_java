@@ -1,43 +1,33 @@
 package pl.taskmanager.taskmanager.controller.view;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(AppViewController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(AppViewController.class)
 @org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
 class AppViewControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.test.web.servlet.MockMvc mockMvc;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.TaskService taskService;
 
-    @MockitoBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pl.taskmanager.taskmanager.service.CategoryService categoryService;
 
-    @Test
+    @org.junit.jupiter.api.Test
     @org.springframework.security.test.context.support.WithMockUser(username = "testuser")
     void shouldShowIndexPage() throws Exception {
         org.mockito.Mockito.when(categoryService.getAll("testuser")).thenReturn(java.util.List.of());
-        org.mockito.Mockito.when(taskService.list(org.mockito.ArgumentMatchers.eq("testuser"), any(), any(), any(), any(), any(), any()))
+        org.mockito.Mockito.when(taskService.list(org.mockito.ArgumentMatchers.eq("testuser"), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(org.springframework.data.domain.Page.empty());
 
-        mockMvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("index"))
-                .andExpect(model().attributeExists("newTask"))
-                .andExpect(model().attributeExists("categories"))
-                .andExpect(model().attributeExists("tasks"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("index"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeExists("newTask"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeExists("categories"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeExists("tasks"));
     }
 }

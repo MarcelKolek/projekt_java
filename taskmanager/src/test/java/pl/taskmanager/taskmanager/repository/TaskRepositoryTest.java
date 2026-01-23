@@ -1,29 +1,18 @@
 package pl.taskmanager.taskmanager.repository;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import pl.taskmanager.taskmanager.entity.Category;
-import pl.taskmanager.taskmanager.entity.Task;
-import pl.taskmanager.taskmanager.entity.TaskStatus;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DataJpaTest
+@org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 class TaskRepositoryTest {
 
-    @Autowired
+    @org.springframework.beans.factory.annotation.Autowired
     private TaskRepository taskRepository;
 
-    @Autowired
+    @org.springframework.beans.factory.annotation.Autowired
     private CategoryRepository categoryRepository;
 
-    @Autowired
+    @org.springframework.beans.factory.annotation.Autowired
     private UserRepository userRepository;
 
-    @Autowired
+    @org.springframework.beans.factory.annotation.Autowired
     private jakarta.persistence.EntityManager entityManager;
 
     private pl.taskmanager.taskmanager.entity.User testUser;
@@ -36,142 +25,142 @@ class TaskRepositoryTest {
         testUser = userRepository.save(testUser);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldSaveTask() {
-        Task task = new Task();
+        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
         task.setTitle("Test Task");
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setUser(testUser);
-        Task saved = taskRepository.save(task);
-        assertThat(saved.getId()).isNotNull();
+        pl.taskmanager.taskmanager.entity.Task saved = taskRepository.save(task);
+        org.assertj.core.api.Assertions.assertThat(saved.getId()).isNotNull();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldFindById() {
-        Task task = new Task();
+        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
         task.setTitle("Find Me");
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setUser(testUser);
-        Task saved = taskRepository.save(task);
-        Optional<Task> found = taskRepository.findById(saved.getId());
-        assertThat(found).isPresent();
-        assertThat(found.get().getTitle()).isEqualTo("Find Me");
+        pl.taskmanager.taskmanager.entity.Task saved = taskRepository.save(task);
+        java.util.Optional<pl.taskmanager.taskmanager.entity.Task> found = taskRepository.findById(saved.getId());
+        org.assertj.core.api.Assertions.assertThat(found).isPresent();
+        org.assertj.core.api.Assertions.assertThat(found.get().getTitle()).isEqualTo("Find Me");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldUpdateTask() {
-        Task task = new Task();
+        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
         task.setTitle("Old Title");
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setUser(testUser);
-        Task saved = taskRepository.save(task);
+        pl.taskmanager.taskmanager.entity.Task saved = taskRepository.save(task);
         saved.setTitle("New Title");
         taskRepository.save(saved);
-        Task updated = taskRepository.findById(saved.getId()).get();
-        assertThat(updated.getTitle()).isEqualTo("New Title");
+        pl.taskmanager.taskmanager.entity.Task updated = taskRepository.findById(saved.getId()).get();
+        org.assertj.core.api.Assertions.assertThat(updated.getTitle()).isEqualTo("New Title");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldDeleteTask() {
-        Task task = new Task();
+        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
         task.setTitle("Delete Me");
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setUser(testUser);
-        Task saved = taskRepository.save(task);
+        pl.taskmanager.taskmanager.entity.Task saved = taskRepository.save(task);
         taskRepository.deleteById(saved.getId());
-        assertThat(taskRepository.findById(saved.getId())).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(taskRepository.findById(saved.getId())).isEmpty();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldClearCategoryForTasks() {
-        Category cat = new Category("Work", "#ff0000");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Work", "#ff0000");
         cat.setUser(testUser);
         cat = categoryRepository.save(cat);
-        Task task = new Task();
+        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
         task.setTitle("Task with Cat");
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setCategory(cat);
         task.setUser(testUser);
         taskRepository.save(task);
 
         int updated = taskRepository.clearCategoryForTasks(cat.getId());
-        assertThat(updated).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(updated).isEqualTo(1);
         
         taskRepository.flush();
         entityManager.clear();
-        Task updatedTask = taskRepository.findAll().get(0);
-        assertThat(updatedTask.getCategory()).isNull();
+        pl.taskmanager.taskmanager.entity.Task updatedTask = taskRepository.findAll().get(0);
+        org.assertj.core.api.Assertions.assertThat(updatedTask.getCategory()).isNull();
     }
     
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldSaveCategory() {
-        Category cat = new Category("Home", "#00ff00");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Home", "#00ff00");
         cat.setUser(testUser);
-        Category saved = categoryRepository.save(cat);
-        assertThat(saved.getId()).isNotNull();
+        pl.taskmanager.taskmanager.entity.Category saved = categoryRepository.save(cat);
+        org.assertj.core.api.Assertions.assertThat(saved.getId()).isNotNull();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldFindCategoryById() {
-        Category cat = new Category("Shop", "#0000ff");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Shop", "#0000ff");
         cat.setUser(testUser);
-        Category saved = categoryRepository.save(cat);
-        assertThat(categoryRepository.findById(saved.getId())).isPresent();
+        pl.taskmanager.taskmanager.entity.Category saved = categoryRepository.save(cat);
+        org.assertj.core.api.Assertions.assertThat(categoryRepository.findById(saved.getId())).isPresent();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldUpdateCategory() {
-        Category cat = new Category("Old", "#111111");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Old", "#111111");
         cat.setUser(testUser);
-        Category saved = categoryRepository.save(cat);
+        pl.taskmanager.taskmanager.entity.Category saved = categoryRepository.save(cat);
         saved.setName("New");
         categoryRepository.save(saved);
-        assertThat(categoryRepository.findById(saved.getId()).get().getName()).isEqualTo("New");
+        org.assertj.core.api.Assertions.assertThat(categoryRepository.findById(saved.getId()).get().getName()).isEqualTo("New");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldDeleteCategory() {
-        Category cat = new Category("Tmp", "#222222");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Tmp", "#222222");
         cat.setUser(testUser);
-        Category saved = categoryRepository.save(cat);
+        pl.taskmanager.taskmanager.entity.Category saved = categoryRepository.save(cat);
         categoryRepository.deleteById(saved.getId());
-        assertThat(categoryRepository.findById(saved.getId())).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(categoryRepository.findById(saved.getId())).isEmpty();
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldListAllTasks() {
-        Task t1 = new Task(); t1.setTitle("T1"); t1.setStatus(TaskStatus.TODO); t1.setUser(testUser);
-        Task t2 = new Task(); t2.setTitle("T2"); t2.setStatus(TaskStatus.TODO); t2.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t1 = new pl.taskmanager.taskmanager.entity.Task(); t1.setTitle("T1"); t1.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO); t1.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t2 = new pl.taskmanager.taskmanager.entity.Task(); t2.setTitle("T2"); t2.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO); t2.setUser(testUser);
         taskRepository.save(t1);
         taskRepository.save(t2);
-        assertThat(taskRepository.findAll()).hasSize(2);
+        org.assertj.core.api.Assertions.assertThat(taskRepository.findAll()).hasSize(2);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldSearchTasksByStatus() {
-        Task t1 = new Task(); t1.setTitle("T1"); t1.setStatus(TaskStatus.TODO); t1.setUser(testUser);
-        Task t2 = new Task(); t2.setTitle("T2"); t2.setStatus(TaskStatus.DONE); t2.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t1 = new pl.taskmanager.taskmanager.entity.Task(); t1.setTitle("T1"); t1.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO); t1.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t2 = new pl.taskmanager.taskmanager.entity.Task(); t2.setTitle("T2"); t2.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.DONE); t2.setUser(testUser);
         taskRepository.save(t1);
         taskRepository.save(t2);
         
-        org.springframework.data.domain.Page<Task> result = taskRepository.search(
-            testUser.getUsername(), TaskStatus.TODO, null, null, null, null, org.springframework.data.domain.PageRequest.of(0, 10)
+        org.springframework.data.domain.Page<pl.taskmanager.taskmanager.entity.Task> result = taskRepository.search(
+            testUser.getUsername(), pl.taskmanager.taskmanager.entity.TaskStatus.TODO, null, null, null, null, org.springframework.data.domain.PageRequest.of(0, 10)
         );
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("T1");
+        org.assertj.core.api.Assertions.assertThat(result.getContent()).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(result.getContent().get(0).getTitle()).isEqualTo("T1");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldSearchTasksByQuery() {
-        Task t1 = new Task(); t1.setTitle("Apple"); t1.setStatus(TaskStatus.TODO); t1.setUser(testUser);
-        Task t2 = new Task(); t2.setTitle("Banana"); t2.setStatus(TaskStatus.TODO); t2.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t1 = new pl.taskmanager.taskmanager.entity.Task(); t1.setTitle("Apple"); t1.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO); t1.setUser(testUser);
+        pl.taskmanager.taskmanager.entity.Task t2 = new pl.taskmanager.taskmanager.entity.Task(); t2.setTitle("Banana"); t2.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO); t2.setUser(testUser);
         taskRepository.save(t1);
         taskRepository.save(t2);
         
-        org.springframework.data.domain.Page<Task> result = taskRepository.search(
+        org.springframework.data.domain.Page<pl.taskmanager.taskmanager.entity.Task> result = taskRepository.search(
             testUser.getUsername(), null, null, "apple", null, null, org.springframework.data.domain.PageRequest.of(0, 10)
         );
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("Apple");
+        org.assertj.core.api.Assertions.assertThat(result.getContent()).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(result.getContent().get(0).getTitle()).isEqualTo("Apple");
     }
 }

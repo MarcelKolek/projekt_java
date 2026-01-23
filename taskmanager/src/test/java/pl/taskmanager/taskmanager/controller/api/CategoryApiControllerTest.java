@@ -1,84 +1,62 @@
 package pl.taskmanager.taskmanager.controller.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import pl.taskmanager.taskmanager.dto.CategoryRequest;
-import pl.taskmanager.taskmanager.dto.CategoryResponse;
-import pl.taskmanager.taskmanager.service.CategoryService;
-import pl.taskmanager.taskmanager.service.UserService;
-
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(CategoryApiController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(CategoryApiController.class)
 @org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
 class CategoryApiControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.test.web.servlet.MockMvc mockMvc;
 
-    @MockitoBean
-    private CategoryService categoryService;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.CategoryService categoryService;
 
-    @MockitoBean
-    private UserService userService;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldGetAllCategories() throws Exception {
-        CategoryResponse resp = new CategoryResponse();
+        pl.taskmanager.taskmanager.dto.CategoryResponse resp = new pl.taskmanager.taskmanager.dto.CategoryResponse();
         resp.id = 1L;
         resp.name = "Work";
         resp.color = "#ff0000";
         
-        when(categoryService.getAll("user")).thenReturn(List.of(resp));
+        org.mockito.Mockito.when(categoryService.getAll("user")).thenReturn(java.util.List.of(resp));
 
-        mockMvc.perform(get("/api/v1/categories"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Work"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/categories"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].name").value("Work"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldCreateCategory() throws Exception {
-        CategoryRequest req = new CategoryRequest();
+        pl.taskmanager.taskmanager.dto.CategoryRequest req = new pl.taskmanager.taskmanager.dto.CategoryRequest();
         req.name = "New Cat";
         req.color = "#00ff00";
 
-        CategoryResponse saved = new CategoryResponse();
+        pl.taskmanager.taskmanager.dto.CategoryResponse saved = new pl.taskmanager.taskmanager.dto.CategoryResponse();
         saved.id = 2L;
         saved.name = "New Cat";
         saved.color = "#00ff00";
         
-        when(categoryService.create(any(CategoryRequest.class), eq("user"))).thenReturn(saved);
+        org.mockito.Mockito.when(categoryService.create(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.dto.CategoryRequest.class), org.mockito.Mockito.eq("user"))).thenReturn(saved);
 
-        mockMvc.perform(post("/api/v1/categories")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/categories")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("New Cat"));
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.name").value("New Cat"));
     }
 
-    @Test
-    @WithMockUser(username = "user")
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
     void shouldDeleteCategory() throws Exception {
-        mockMvc.perform(delete("/api/v1/categories/1").with(csrf()))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/categories/1").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
     }
 }

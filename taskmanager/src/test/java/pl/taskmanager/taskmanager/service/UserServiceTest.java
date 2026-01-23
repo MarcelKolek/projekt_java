@@ -1,98 +1,95 @@
 package pl.taskmanager.taskmanager.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.taskmanager.taskmanager.dto.RegisterRequest;
-import pl.taskmanager.taskmanager.entity.User;
-import pl.taskmanager.taskmanager.repository.UserRepository;
-
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @org.mockito.Mock
+    private pl.taskmanager.taskmanager.repository.UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @org.mockito.Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    @InjectMocks
-    private UserService userService;
+    @org.mockito.InjectMocks
+    private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @BeforeEach
+    @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        org.mockito.MockitoAnnotations.openMocks(this);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldLoadUserByUsername() {
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setUsername("testuser");
         user.setPassword("encodedPass");
-        user.setRoles(Set.of("ROLE_USER"));
+        user.setRoles(java.util.Set.of("ROLE_USER"));
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+        org.mockito.Mockito.when(userRepository.findByUsername("testuser"))
+                .thenReturn(java.util.Optional.of(user));
 
-        UserDetails userDetails = userService.loadUserByUsername("testuser");
+        org.springframework.security.core.userdetails.UserDetails userDetails =
+                userService.loadUserByUsername("testuser");
 
-        assertThat(userDetails.getUsername()).isEqualTo("testuser");
-        assertThat(userDetails.getPassword()).isEqualTo("encodedPass");
+        org.assertj.core.api.Assertions.assertThat(userDetails)
+                .returns("testuser", org.springframework.security.core.userdetails.UserDetails::getUsername)
+                .returns("encodedPass", org.springframework.security.core.userdetails.UserDetails::getPassword);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldThrowExceptionWhenUserNotFound() {
-        when(userRepository.findByUsername("none")).thenReturn(Optional.empty());
+        org.mockito.Mockito.when(userRepository.findByUsername("none"))
+                .thenReturn(java.util.Optional.empty());
 
-        assertThatThrownBy(() -> userService.loadUserByUsername("none"))
-                .isInstanceOf(UsernameNotFoundException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> userService.loadUserByUsername("none"))
+                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldRegisterUser() {
-        RegisterRequest req = new RegisterRequest();
+        pl.taskmanager.taskmanager.dto.RegisterRequest req =
+                new pl.taskmanager.taskmanager.dto.RegisterRequest();
         req.setUsername("newuser");
         req.setPassword("password");
         req.setEmail("test@example.com");
 
-        when(userRepository.existsByUsername("newuser")).thenReturn(false);
-        when(passwordEncoder.encode("password")).thenReturn("encoded");
+        org.mockito.Mockito.when(userRepository.existsByUsername("newuser"))
+                .thenReturn(false);
+        org.mockito.Mockito.when(passwordEncoder.encode("password"))
+                .thenReturn("encoded");
 
         userService.register(req);
 
-        verify(userRepository, times(1)).save(any(User.class));
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.times(1))
+                .save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.User.class));
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldThrowExceptionWhenUsernameExists() {
-        RegisterRequest req = new RegisterRequest();
+        pl.taskmanager.taskmanager.dto.RegisterRequest req =
+                new pl.taskmanager.taskmanager.dto.RegisterRequest();
         req.setUsername("exists");
 
-        when(userRepository.existsByUsername("exists")).thenReturn(true);
+        org.mockito.Mockito.when(userRepository.existsByUsername("exists"))
+                .thenReturn(true);
 
-        assertThatThrownBy(() -> userService.register(req))
-                .isInstanceOf(IllegalArgumentException.class)
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> userService.register(req))
+                .isInstanceOf(java.lang.IllegalArgumentException.class)
                 .hasMessage("Username already exists");
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldFindByUsername() {
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user =
+                new pl.taskmanager.taskmanager.entity.User();
         user.setUsername("user");
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
 
-        User result = userService.findByUsername("user");
-        assertThat(result.getUsername()).isEqualTo("user");
+        org.mockito.Mockito.when(userRepository.findByUsername("user"))
+                .thenReturn(java.util.Optional.of(user));
+
+        pl.taskmanager.taskmanager.entity.User result =
+                userService.findByUsername("user");
+
+        org.assertj.core.api.Assertions.assertThat(result.getUsername())
+                .isEqualTo("user");
     }
 }

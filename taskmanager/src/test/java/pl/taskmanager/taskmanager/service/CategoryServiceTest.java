@@ -1,155 +1,136 @@
 package pl.taskmanager.taskmanager.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import pl.taskmanager.taskmanager.dto.CategoryRequest;
-import pl.taskmanager.taskmanager.dto.CategoryResponse;
-import pl.taskmanager.taskmanager.entity.Category;
-import pl.taskmanager.taskmanager.entity.User;
-import pl.taskmanager.taskmanager.repository.CategoryRepository;
-import pl.taskmanager.taskmanager.repository.UserRepository;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 class CategoryServiceTest {
 
-    @Mock
-    private CategoryRepository categoryRepository;
+    @org.mockito.Mock
+    private pl.taskmanager.taskmanager.repository.CategoryRepository categoryRepository;
 
-    @Mock
-    private UserRepository userRepository;
+    @org.mockito.Mock
+    private pl.taskmanager.taskmanager.service.UserService userService;
 
-    @Mock
+    @org.mockito.Mock
     private pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao;
 
-    @InjectMocks
-    private CategoryService categoryService;
+    @org.mockito.InjectMocks
+    private pl.taskmanager.taskmanager.service.CategoryService categoryService;
 
-    @BeforeEach
+    @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        org.mockito.MockitoAnnotations.openMocks(this);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldCreateCategory() {
-        CategoryRequest req = new CategoryRequest();
+        pl.taskmanager.taskmanager.dto.CategoryRequest req = new pl.taskmanager.taskmanager.dto.CategoryRequest();
         req.name = "Test";
         req.color = "#ffffff";
 
         pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setUsername("user");
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        org.mockito.Mockito.when(userService.findByUsername("user")).thenReturn(user);
 
-        Category saved = new Category("Test", "#ffffff");
+        pl.taskmanager.taskmanager.entity.Category saved = new pl.taskmanager.taskmanager.entity.Category("Test", "#ffffff");
         saved.setUser(user);
-        when(categoryRepository.save(any(Category.class))).thenReturn(saved);
+        org.mockito.Mockito.when(categoryRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Category.class))).thenReturn(saved);
 
-        CategoryResponse result = categoryService.create(req, "user");
+        pl.taskmanager.taskmanager.dto.CategoryResponse result = categoryService.create(req, "user");
 
-        assertThat(result.name).isEqualTo("Test");
-        verify(categoryRepository, times(1)).save(any(Category.class));
+        org.assertj.core.api.Assertions.assertThat(result.name).isEqualTo("Test");
+        org.mockito.Mockito.verify(categoryRepository, org.mockito.Mockito.times(1)).save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Category.class));
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldDeleteCategoryAndClearTasks() {
         Long catId = 1L;
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setId(10L);
         user.setUsername("user");
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        org.mockito.Mockito.when(userService.findByUsername("user")).thenReturn(user);
 
-        Category cat = new Category("Test", "#ffffff");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Test", "#ffffff");
         cat.setUser(user);
-        when(categoryRepository.findById(catId)).thenReturn(Optional.of(cat));
+        org.mockito.Mockito.when(categoryRepository.findById(catId)).thenReturn(java.util.Optional.of(cat));
 
         categoryService.delete(catId, "user");
 
-        verify(taskJdbcDao, times(1)).clearCategoryForTasks(catId);
-        verify(categoryRepository, times(1)).deleteById(catId);
+        org.mockito.Mockito.verify(taskJdbcDao, org.mockito.Mockito.times(1)).clearCategoryForTasks(catId);
+        org.mockito.Mockito.verify(categoryRepository, org.mockito.Mockito.times(1)).deleteById(catId);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldUpdateCategory() {
         Long catId = 1L;
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setId(10L);
         user.setUsername("user");
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        org.mockito.Mockito.when(userService.findByUsername("user")).thenReturn(user);
 
-        Category cat = new Category("Old", "#000000");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Old", "#000000");
         cat.setId(catId);
         cat.setUser(user);
-        when(categoryRepository.findById(catId)).thenReturn(Optional.of(cat));
-        when(categoryRepository.save(any(Category.class))).thenReturn(cat);
+        org.mockito.Mockito.when(categoryRepository.findById(catId)).thenReturn(java.util.Optional.of(cat));
+        org.mockito.Mockito.when(categoryRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Category.class))).thenReturn(cat);
 
-        CategoryRequest req = new CategoryRequest();
+        pl.taskmanager.taskmanager.dto.CategoryRequest req = new pl.taskmanager.taskmanager.dto.CategoryRequest();
         req.name = "New";
         req.color = "#ffffff";
 
         categoryService.update(catId, req, "user");
 
-        assertThat(cat.getName()).isEqualTo("New");
-        verify(categoryRepository).save(cat);
+        org.assertj.core.api.Assertions.assertThat(cat.getName()).isEqualTo("New");
+        org.mockito.Mockito.verify(categoryRepository).save(cat);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldThrowWhenUpdateStrangerCategory() {
         Long catId = 1L;
-        User owner = new User();
+        pl.taskmanager.taskmanager.entity.User owner = new pl.taskmanager.taskmanager.entity.User();
         owner.setId(10L);
         owner.setUsername("owner");
 
-        User stranger = new User();
+        pl.taskmanager.taskmanager.entity.User stranger = new pl.taskmanager.taskmanager.entity.User();
         stranger.setId(20L);
         stranger.setUsername("stranger");
 
-        when(userRepository.findByUsername("stranger")).thenReturn(Optional.of(stranger));
+        org.mockito.Mockito.when(userService.findByUsername("stranger")).thenReturn(stranger);
 
-        Category cat = new Category("Test", "#000000");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Test", "#000000");
         cat.setUser(owner);
-        when(categoryRepository.findById(catId)).thenReturn(Optional.of(cat));
+        org.mockito.Mockito.when(categoryRepository.findById(catId)).thenReturn(java.util.Optional.of(cat));
 
-        assertThatThrownBy(() -> categoryService.update(catId, new CategoryRequest(), "stranger"))
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> categoryService.update(catId, new pl.taskmanager.taskmanager.dto.CategoryRequest(), "stranger"))
                 .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldGetAllCategories() {
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setUsername("user");
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
-        when(categoryRepository.findAllByUser(user)).thenReturn(java.util.List.of(new Category()));
+        org.mockito.Mockito.when(userService.findByUsername("user")).thenReturn(user);
+        org.mockito.Mockito.when(categoryRepository.findAllByUser(user)).thenReturn(java.util.List.of(new pl.taskmanager.taskmanager.entity.Category()));
         
-        java.util.List<CategoryResponse> result = categoryService.getAll("user");
-        assertThat(result).hasSize(1);
+        java.util.List<pl.taskmanager.taskmanager.dto.CategoryResponse> result = categoryService.getAll("user");
+        org.assertj.core.api.Assertions.assertThat(result).hasSize(1);
     }
 
-    @Test
+    @org.junit.jupiter.api.Test
     void shouldGetCategoryById() {
         Long catId = 1L;
-        User user = new User();
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
         user.setId(10L);
         user.setUsername("user");
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        org.mockito.Mockito.when(userService.findByUsername("user")).thenReturn(user);
 
-        Category cat = new Category("Work", "#ff0000");
+        pl.taskmanager.taskmanager.entity.Category cat = new pl.taskmanager.taskmanager.entity.Category("Work", "#ff0000");
         cat.setUser(user);
-        when(categoryRepository.findById(catId)).thenReturn(Optional.of(cat));
+        org.mockito.Mockito.when(categoryRepository.findById(catId)).thenReturn(java.util.Optional.of(cat));
 
-        CategoryResponse result = categoryService.getById(catId, "user");
-        assertThat(result.name).isEqualTo("Work");
+        pl.taskmanager.taskmanager.dto.CategoryResponse result = categoryService.getById(catId, "user");
+        org.assertj.core.api.Assertions.assertThat(result.name).isEqualTo("Work");
     }
 }
