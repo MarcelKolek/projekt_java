@@ -77,14 +77,13 @@ public class CategoryService {
         User user = findUser(username);
         getCategoryEntity(id, user);
 
-        // po usunięciu kategorii category_id = NULL (używając JdbcTemplate zgodnie z wymaganiem)
+        // po usunięciu kategorii category_id = NULL z JdbcTemplate
         int updated = taskJdbcDao.clearCategoryForTasks(id);
         log.info("Cleared category for {} tasks (categoryId={})", updated, id);
 
         categoryRepository.deleteById(id);
     }
 
-    // Helper for internal use (still uses Entities)
     public Category getCategoryEntity(Long id, User user) {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category id=" + id + " not found"));

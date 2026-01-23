@@ -24,7 +24,7 @@ public class Task {
 
     private LocalDate dueDate;
 
-    // ManyToOne + JoinColumn (wymaganie!)
+    // ManyToOne, JoinColumn
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;

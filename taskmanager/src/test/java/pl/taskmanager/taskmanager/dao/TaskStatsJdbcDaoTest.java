@@ -21,7 +21,6 @@ class TaskStatsJdbcDaoTest {
 
     @Test
     void shouldGetStats() {
-        // H2 database in JdbcTest
         jdbcTemplate.execute("CREATE TABLE tasks (id IDENTITY PRIMARY KEY, status VARCHAR(255), user_id BIGINT)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('TODO', 1)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('IN_PROGRESS', 1)");

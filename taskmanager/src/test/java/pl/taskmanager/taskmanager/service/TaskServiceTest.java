@@ -189,7 +189,6 @@ class TaskServiceTest {
 
     @Test
     void shouldUpdateTaskStatusInRepo() {
-        // Ten test jest bardziej dla pokrycia Repository/Entity jeśli byśmy tam mieli logikę
         Task task = new Task();
         task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
         task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.DONE);

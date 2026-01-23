@@ -121,10 +121,7 @@ class TaskApiControllerTest {
     @Test
     void shouldDenyAnonymous() throws Exception {
         mockMvc.perform(get("/api/v1/tasks"))
-                .andExpect(status().isFound()); // 302 to login page for view controllers or 401 for api?
-                // Actually my SecurityConfig says /api/v1/** is authenticated()
-                // For non-browser clients it should be 401, but default formLogin might return 302.
-                // However, @WithMockUser is not here, so it's anonymous.
+                .andExpect(status().isFound());
     }
 
     @Test

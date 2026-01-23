@@ -33,7 +33,6 @@ public class AppViewController {
             log.debug("Accessing home page for user={}", userDetails.getUsername());
             model.addAttribute("categories", categoryService.getAll(userDetails.getUsername()));
 
-            // Pobieramy pierwsze 10 zadań dla th:each
             org.springframework.data.domain.Page<pl.taskmanager.taskmanager.dto.TaskResponse> tasksPage =
                 taskService.list(userDetails.getUsername(), null, null, null, null, null,
                 org.springframework.data.domain.PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("dueDate").ascending()));

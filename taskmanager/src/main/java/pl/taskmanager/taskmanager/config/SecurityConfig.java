@@ -16,7 +16,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, pl.taskmanager.taskmanager.service.UserService userService) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Wyłączamy dla ułatwienia w API REST
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/index.html", "/app.css", "/app.js", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/login", "/register").permitAll()

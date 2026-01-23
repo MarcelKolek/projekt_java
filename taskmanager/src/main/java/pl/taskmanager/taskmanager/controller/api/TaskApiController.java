@@ -271,9 +271,6 @@ public class TaskApiController {
     })
     @GetMapping("/stats/jdbc")
     public ResponseEntity<TaskStatsResponse> statsJdbc(@AuthenticationPrincipal UserDetails userDetails) {
-        // Tu używamy UserDetails aby wyciągnąć ID przez serwis (który może zależeć od User entity, ale kontroler nie powinien)
-        // Ale UserService.findByUsername zwraca User entity.
-        // Rozwiązanie: UserService powinno zwracać UserDto lub oferować metodę findIdByUsername.
         return ResponseEntity.ok(taskStatsJdbcDao.getStats(userService.findIdByUsername(userDetails.getUsername())));
     }
 

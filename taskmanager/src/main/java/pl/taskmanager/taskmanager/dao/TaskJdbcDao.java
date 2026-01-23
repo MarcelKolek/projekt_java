@@ -18,7 +18,7 @@ public class TaskJdbcDao {
     }
 
     public void insertLog(String message, Long userId) {
-        // Przykład operacji INSERT z update() zgodnie z wymaganiem
+        // INSERT z update()
         String sql = "INSERT INTO tasks (title, status, user_id, created_at, updated_at) VALUES (?, 'TODO', ?, NOW(), NOW())";
         jdbcTemplate.update(sql, "[LOG] " + message, userId);
     }

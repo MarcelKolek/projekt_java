@@ -97,13 +97,10 @@ class TaskRepositoryTest {
         int updated = taskRepository.clearCategoryForTasks(cat.getId());
         assertThat(updated).isEqualTo(1);
         
-        // Trzeba wyczyścić sesję JPA aby zobaczyć zmiany w bazie (albo użyć refresh)
         taskRepository.flush();
         entityManager.clear();
-        // Clear is not available directly on repo, but repo.saveAll will do it too or just refetch
         Task updatedTask = taskRepository.findAll().get(0);
         assertThat(updatedTask.getCategory()).isNull();
-        // Note: clearing via @Query doesn't update managed entities in memory automatically
     }
     
     @Test

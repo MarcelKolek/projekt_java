@@ -17,8 +17,6 @@ class SeleniumTest {
 
     @Test
     void shouldLoadLoginPage() {
-        // Ten test wymaga zainstalowanego Chrome i ChromeDrivera.
-        // W tym środowisku może nie być dostępny, więc łapiemy wyjątki, aby nie przerywać buildu.
         
         try {
             ChromeOptions options = new ChromeOptions();
@@ -29,7 +27,6 @@ class SeleniumTest {
             
             try {
                 driver.get("http://localhost:" + port + "/login");
-                // Czekamy chwilę na załadowanie
                 Thread.sleep(1000);
                 assertThat(driver.getTitle()).isNotEmpty();
             } finally {
@@ -37,7 +34,6 @@ class SeleniumTest {
             }
         } catch (Throwable t) {
             System.err.println("Selenium test could not run: " + t.getMessage());
-            // Nie rzucamy wyjątku dalej, aby build przeszedł jeśli nie ma przeglądarki
         }
     }
 }
