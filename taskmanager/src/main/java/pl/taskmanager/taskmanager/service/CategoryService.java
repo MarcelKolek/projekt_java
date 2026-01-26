@@ -1,80 +1,104 @@
 package pl.taskmanager.taskmanager.service;
 
-@org.springframework.stereotype.Service
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import pl.taskmanager.taskmanager.dao.TaskJdbcDao;
+import pl.taskmanager.taskmanager.dto.CategoryRequest;
+import pl.taskmanager.taskmanager.dto.CategoryResponse;
+import pl.taskmanager.taskmanager.entity.Category;
+import pl.taskmanager.taskmanager.entity.User;
+import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
+import pl.taskmanager.taskmanager.repository.CategoryRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
 public class CategoryService {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CategoryService.class);
+    private static final Logger log = LoggerFactory.getLogger(CategoryService.class);
 
-    private final pl.taskmanager.taskmanager.repository.CategoryRepository categoryRepository;
-    private final pl.taskmanager.taskmanager.service.UserService userService;
-    private final pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao;
+    private final CategoryRepository categoryRepository;
+    private final UserService userService;
+    private final TaskJdbcDao taskJdbcDao;
 
-    public CategoryService(pl.taskmanager.taskmanager.repository.CategoryRepository categoryRepository, pl.taskmanager.taskmanager.service.UserService userService, pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao) {
+    public CategoryService(
+            CategoryRepository categoryRepository,
+            UserService userService,
+            TaskJdbcDao taskJdbcDao
+    ) {
         this.categoryRepository = categoryRepository;
         this.userService = userService;
         this.taskJdbcDao = taskJdbcDao;
     }
 
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public java.util.List<pl.taskmanager.taskmanager.dto.CategoryResponse> getAll(String username) {
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getAll(String username) {
         log.debug("Fetching all categories for user={}", username);
-        pl.taskmanager.taskmanager.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
+
         return categoryRepository.findAllByUser(user).stream()
-                .map(pl.taskmanager.taskmanager.dto.CategoryResponse::new)
-                .collect(java.util.stream.Collectors.toList());
+                .map(CategoryResponse::new)
+                .collect(Collectors.toList());
     }
 
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public pl.taskmanager.taskmanager.dto.CategoryResponse getById(Long id, String username) {
+    @Transactional(readOnly = true)
+    public CategoryResponse getById(Long id, String username) {
         log.debug("Fetching category id={} for user={}", id, username);
-        pl.taskmanager.taskmanager.entity.User user = userService.findByUsername(username);
-        return new pl.taskmanager.taskmanager.dto.CategoryResponse(getCategoryEntity(id, user));
+        User user = userService.findByUsername(username);
+        return new CategoryResponse(getCategoryEntity(id, user));
     }
 
-    @org.springframework.transaction.annotation.Transactional
-    public pl.taskmanager.taskmanager.dto.CategoryResponse create(pl.taskmanager.taskmanager.dto.CategoryRequest req, String username) {
+    @Transactional
+    public CategoryResponse create(CategoryRequest req, String username) {
         log.info("Creating category name={} for user={}", req.name, username);
-        pl.taskmanager.taskmanager.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
 
-        pl.taskmanager.taskmanager.entity.Category c = new pl.taskmanager.taskmanager.entity.Category();
+        Category c = new Category();
         c.setName(req.name);
         c.setColor(normalizeHex(req.color));
         c.setUser(user);
 
-        return new pl.taskmanager.taskmanager.dto.CategoryResponse(categoryRepository.save(c));
+        return new CategoryResponse(categoryRepository.save(c));
     }
 
-    @org.springframework.transaction.annotation.Transactional
-    public pl.taskmanager.taskmanager.dto.CategoryResponse update(Long id, pl.taskmanager.taskmanager.dto.CategoryRequest req, String username) {
+    @Transactional
+    public CategoryResponse update(Long id, CategoryRequest req, String username) {
         log.info("Updating category id={} for user={}", id, username);
-        pl.taskmanager.taskmanager.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
 
-        pl.taskmanager.taskmanager.entity.Category c = getCategoryEntity(id, user);
+        Category c = getCategoryEntity(id, user);
         c.setName(req.name);
         c.setColor(normalizeHex(req.color));
 
-        return new pl.taskmanager.taskmanager.dto.CategoryResponse(categoryRepository.save(c));
+        return new CategoryResponse(categoryRepository.save(c));
     }
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void delete(Long id, String username) {
         log.info("Deleting category id={} for user={}", id, username);
-        pl.taskmanager.taskmanager.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
+
         getCategoryEntity(id, user);
 
-        // po usunięciu kategorii category_id = NULL z JdbcTemplate
         int updated = taskJdbcDao.clearCategoryForTasks(id);
         log.info("Cleared category for {} tasks (categoryId={})", updated, id);
 
         categoryRepository.deleteById(id);
     }
 
-    public pl.taskmanager.taskmanager.entity.Category getCategoryEntity(Long id, pl.taskmanager.taskmanager.entity.User user) {
-        pl.taskmanager.taskmanager.entity.Category c = categoryRepository.findById(id)
-                .orElseThrow(() -> new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Category id=" + id + " not found"));
+    public Category getCategoryEntity(Long id, User user) {
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category id=" + id + " not found"));
+
         if (!c.getUser().getId().equals(user.getId())) {
-            throw new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Category id=" + id + " not found");
+            throw new ResourceNotFoundException("Category id=" + id + " not found");
         }
+
         return c;
     }
 

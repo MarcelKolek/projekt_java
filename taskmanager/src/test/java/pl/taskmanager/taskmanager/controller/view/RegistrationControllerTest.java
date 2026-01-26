@@ -1,41 +1,56 @@
 package pl.taskmanager.taskmanager.controller.view;
 
-@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(RegistrationController.class)
-@org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import pl.taskmanager.taskmanager.config.SecurityConfig;
+import pl.taskmanager.taskmanager.service.UserService;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(RegistrationController.class)
+@Import(SecurityConfig.class)
 class RegistrationControllerTest {
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private org.springframework.test.web.servlet.MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @org.springframework.test.context.bean.override.mockito.MockitoBean
-    private pl.taskmanager.taskmanager.service.UserService userService;
+    @MockitoBean
+    private UserService userService;
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldShowRegistrationForm() throws Exception {
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/register"))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("register"))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeExists("registerRequest"));
+        mockMvc.perform(get("/register"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attributeExists("registerRequest"));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldRegisterUserSuccessfully() throws Exception {
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/register")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+        mockMvc.perform(post("/register")
+                        .with(csrf())
                         .param("username", "newuser")
                         .param("password", "password")
                         .param("email", "test@test.com"))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is3xxRedirection())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl("/login?registered"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?registered"));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldShowErrorOnInvalidInput() throws Exception {
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/register")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+        mockMvc.perform(post("/register")
+                        .with(csrf())
                         .param("username", "us")
                         .param("password", "123"))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("register"));
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"));
     }
 }

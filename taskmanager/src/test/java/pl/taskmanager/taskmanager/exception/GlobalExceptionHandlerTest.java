@@ -1,63 +1,91 @@
 package pl.taskmanager.taskmanager.exception;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleNotFound() {
         ResourceNotFoundException ex = new ResourceNotFoundException("Not found");
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleNotFound(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
+
+        ResponseEntity<Map<String, String>> response = handler.handleNotFound(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
+        Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleValidation() {
-        org.springframework.web.bind.MethodArgumentNotValidException ex = org.mockito.Mockito.mock(org.springframework.web.bind.MethodArgumentNotValidException.class);
-        org.springframework.validation.BindingResult bindingResult = org.mockito.Mockito.mock(org.springframework.validation.BindingResult.class);
-        org.mockito.Mockito.when(ex.getBindingResult()).thenReturn(bindingResult);
-        org.mockito.Mockito.when(bindingResult.getAllErrors()).thenReturn(java.util.List.of(
-                new org.springframework.validation.FieldError("obj", "field", "message"),
-                new org.springframework.validation.ObjectError("obj", "global message")
+        MethodArgumentNotValidException ex = Mockito.mock(MethodArgumentNotValidException.class);
+        BindingResult bindingResult = Mockito.mock(BindingResult.class);
+
+        Mockito.when(ex.getBindingResult()).thenReturn(bindingResult);
+        Mockito.when(bindingResult.getAllErrors()).thenReturn(List.of(
+                new FieldError("obj", "field", "message"),
+                new ObjectError("obj", "global message")
         ));
 
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleValidationExceptions(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("field")).isEqualTo("message");
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("obj")).isEqualTo("global message");
+        ResponseEntity<Map<String, String>> response = handler.handleValidationExceptions(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
+        Assertions.assertThat(response.getBody().get("field")).isEqualTo("message");
+        Assertions.assertThat(response.getBody().get("obj")).isEqualTo("global message");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleNoResourceFound() {
-        org.springframework.web.servlet.resource.NoResourceFoundException ex = org.mockito.Mockito.mock(org.springframework.web.servlet.resource.NoResourceFoundException.class);
-        org.mockito.Mockito.when(ex.getResourcePath()).thenReturn("favicon.ico");
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleNoResourceFound(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
+        NoResourceFoundException ex = Mockito.mock(NoResourceFoundException.class);
+        Mockito.when(ex.getResourcePath()).thenReturn("favicon.ico");
+
+        ResponseEntity<Map<String, String>> response = handler.handleNoResourceFound(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
+        Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleIllegalArgument() {
         IllegalArgumentException ex = new IllegalArgumentException("Illegal");
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleIllegalArgument(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Illegal");
+
+        ResponseEntity<Map<String, String>> response = handler.handleIllegalArgument(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
+        Assertions.assertThat(response.getBody().get("error")).isEqualTo("Illegal");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleIOException() {
-        java.io.IOException ex = new java.io.IOException("IO error");
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleIOException(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Unexpected file IO error occurred.");
+        IOException ex = new IOException("IO error");
+
+        ResponseEntity<Map<String, String>> response = handler.handleIOException(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
+        Assertions.assertThat(response.getBody().get("error"))
+                .isEqualTo("Unexpected file IO error occurred.");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldHandleGeneralException() {
         Exception ex = new Exception("General");
-        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleGeneralException(ex);
-        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
-        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Unexpected server error occurred.");
+
+        ResponseEntity<Map<String, String>> response = handler.handleGeneralException(ex);
+
+        Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
+        Assertions.assertThat(response.getBody().get("error"))
+                .isEqualTo("Unexpected server error occurred.");
     }
 }

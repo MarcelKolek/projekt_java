@@ -1,13 +1,20 @@
 package pl.taskmanager.taskmanager.service;
 
-@org.springframework.stereotype.Service
+import org.springframework.stereotype.Service;
+
+import pl.taskmanager.taskmanager.dto.TaskResponse;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@Service
 public class CsvService {
 
-    public byte[] exportTasksToCsv(java.util.List<pl.taskmanager.taskmanager.dto.TaskResponse> tasks) {
+    public byte[] exportTasksToCsv(List<TaskResponse> tasks) {
         StringBuilder sb = new StringBuilder();
         sb.append("id,title,description,status,dueDate,categoryId,categoryName,createdAt,updatedAt\n");
 
-        for (pl.taskmanager.taskmanager.dto.TaskResponse t : tasks) {
+        for (TaskResponse t : tasks) {
             sb.append(csv(t.id)).append(",");
             sb.append(csv(t.title)).append(",");
             sb.append(csv(t.description)).append(",");
@@ -23,11 +30,13 @@ public class CsvService {
             sb.append(csv(t.updatedAt != null ? t.updatedAt.toString() : null)).append("\n");
         }
 
-        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private String csv(Object value) {
-        if (value == null) return "";
+        if (value == null) {
+            return "";
+        }
         String s = String.valueOf(value).replace("\"", "\"\"");
         return "\"" + s + "\"";
     }

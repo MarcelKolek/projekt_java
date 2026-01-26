@@ -1,31 +1,45 @@
 package pl.taskmanager.taskmanager.dao;
 
-@org.springframework.boot.test.autoconfigure.jdbc.JdbcTest
-@org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao.class)
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
+
+@JdbcTest
+@Import(TaskStatsJdbcDao.class)
 class TaskStatsJdbcDaoTest {
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao taskStatsJdbcDao;
+    @Autowired
+    private TaskStatsJdbcDao taskStatsJdbcDao;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldGetStats() {
-        jdbcTemplate.execute("CREATE TABLE tasks (id IDENTITY PRIMARY KEY, status VARCHAR(255), user_id BIGINT)");
+        jdbcTemplate.execute(
+                "CREATE TABLE tasks (" +
+                        "id IDENTITY PRIMARY KEY, " +
+                        "status VARCHAR(255), " +
+                        "user_id BIGINT)"
+        );
+
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('TODO', 1)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('IN_PROGRESS', 1)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('DONE', 1)");
         jdbcTemplate.execute("INSERT INTO tasks (status, user_id) VALUES ('TODO', 2)"); // other user
 
-        pl.taskmanager.taskmanager.dto.TaskStatsResponse stats = taskStatsJdbcDao.getStats(1L);
+        TaskStatsResponse stats = taskStatsJdbcDao.getStats(1L);
 
-        org.assertj.core.api.Assertions.assertThat(stats.total).isEqualTo(3);
-        org.assertj.core.api.Assertions.assertThat(stats.todo).isEqualTo(1);
-        org.assertj.core.api.Assertions.assertThat(stats.inProgress).isEqualTo(1);
-        org.assertj.core.api.Assertions.assertThat(stats.done).isEqualTo(1);
-
-        org.assertj.core.api.Assertions.assertThat(stats.percentDone)
-                .isCloseTo(33.333333333333336, org.assertj.core.api.Assertions.within(1e-9));
+        Assertions.assertThat(stats.total).isEqualTo(3);
+        Assertions.assertThat(stats.todo).isEqualTo(1);
+        Assertions.assertThat(stats.inProgress).isEqualTo(1);
+        Assertions.assertThat(stats.done).isEqualTo(1);
+        Assertions.assertThat(stats.percentDone)
+                .isCloseTo(33.333333333333336, Assertions.within(1e-9));
     }
 }

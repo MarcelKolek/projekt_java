@@ -1,47 +1,64 @@
 package pl.taskmanager.taskmanager.service;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import pl.taskmanager.taskmanager.dto.CategoryResponse;
+import pl.taskmanager.taskmanager.dto.TaskResponse;
+import pl.taskmanager.taskmanager.entity.TaskStatus;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class CsvServiceTest {
 
     private final CsvService csvService = new CsvService();
 
-    @org.junit.jupiter.api.Test
+    @Test
     void exportTasksToCsv_EmptyList() {
-        byte[] result = csvService.exportTasksToCsv(java.util.Collections.emptyList());
-        String csv = new String(result, java.nio.charset.StandardCharsets.UTF_8);
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("id,title,description,status,dueDate,categoryId,categoryName,createdAt,updatedAt"));
+        byte[] result = csvService.exportTasksToCsv(Collections.emptyList());
+        String csv = new String(result, StandardCharsets.UTF_8);
+
+        assertTrue(csv.contains(
+                "id,title,description,status,dueDate,categoryId,categoryName,createdAt,updatedAt"
+        ));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void exportTasksToCsv_WithData() {
-        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        TaskResponse task = new TaskResponse();
         task.id = 1L;
         task.title = "Test Task";
         task.description = "Description \"with quotes\"";
-        task.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
-        task.dueDate = java.time.LocalDate.of(2023, 10, 27);
-        task.createdAt = java.time.LocalDateTime.of(2023, 10, 27, 10, 0);
-        task.updatedAt = java.time.LocalDateTime.of(2023, 10, 27, 11, 0);
+        task.status = TaskStatus.TODO;
+        task.dueDate = LocalDate.of(2023, 10, 27);
+        task.createdAt = LocalDateTime.of(2023, 10, 27, 10, 0);
+        task.updatedAt = LocalDateTime.of(2023, 10, 27, 11, 0);
 
-        pl.taskmanager.taskmanager.dto.CategoryResponse category = new pl.taskmanager.taskmanager.dto.CategoryResponse();
+        CategoryResponse category = new CategoryResponse();
         category.id = 2L;
         category.name = "Work";
         task.category = category;
 
-        byte[] result = csvService.exportTasksToCsv(java.util.List.of(task));
-        String csv = new String(result, java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = csvService.exportTasksToCsv(List.of(task));
+        String csv = new String(result, StandardCharsets.UTF_8);
 
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"1\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"Test Task\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"Description \"\"with quotes\"\"\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"TODO\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"2023-10-27\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"2\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"Work\""));
+        assertTrue(csv.contains("\"1\""));
+        assertTrue(csv.contains("\"Test Task\""));
+        assertTrue(csv.contains("\"Description \"\"with quotes\"\"\""));
+        assertTrue(csv.contains("\"TODO\""));
+        assertTrue(csv.contains("\"2023-10-27\""));
+        assertTrue(csv.contains("\"2\""));
+        assertTrue(csv.contains("\"Work\""));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void exportTasksToCsv_WithNulls() {
-        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        TaskResponse task = new TaskResponse();
         task.id = 1L;
         task.title = "Test Task";
         task.status = null;
@@ -50,10 +67,10 @@ class CsvServiceTest {
         task.createdAt = null;
         task.updatedAt = null;
 
-        byte[] result = csvService.exportTasksToCsv(java.util.List.of(task));
-        String csv = new String(result, java.nio.charset.StandardCharsets.UTF_8);
+        byte[] result = csvService.exportTasksToCsv(List.of(task));
+        String csv = new String(result, StandardCharsets.UTF_8);
 
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"1\""));
-        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("\"Test Task\""));
+        assertTrue(csv.contains("\"1\""));
+        assertTrue(csv.contains("\"Test Task\""));
     }
 }

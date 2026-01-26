@@ -1,23 +1,33 @@
 package pl.taskmanager.taskmanager.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import pl.taskmanager.taskmanager.entity.TaskStatus;
+
+import java.time.LocalDate;
+
 public class TaskRequest {
 
-    @io.swagger.v3.oas.annotations.media.Schema(description = "Tytuł zadania", example = "Zrobić projekt")
-    @jakarta.validation.constraints.NotBlank
-    @jakarta.validation.constraints.Size(max = 255)
-    public java.lang.String title;
+    @Schema(description = "Tytuł zadania", example = "Zrobić projekt")
+    @NotBlank
+    @Size(max = 255)
+    public String title;
 
-    @io.swagger.v3.oas.annotations.media.Schema(description = "Opis zadania", example = "Dokończyć backend i UI")
-    @jakarta.validation.constraints.Size(max = 2000)
-    public java.lang.String description;
+    @Schema(description = "Opis zadania", example = "Dokończyć backend i UI")
+    @Size(max = 2000)
+    public String description;
 
-    @io.swagger.v3.oas.annotations.media.Schema(description = "Status zadania", example = "TODO")
-    @jakarta.validation.constraints.NotNull
-    public pl.taskmanager.taskmanager.entity.TaskStatus status;
+    @Schema(description = "Status zadania", example = "TODO")
+    @NotNull
+    public TaskStatus status;
 
-    @io.swagger.v3.oas.annotations.media.Schema(description = "Deadline (yyyy-MM-dd)", example = "2026-02-01")
-    public java.time.LocalDate dueDate;
+    @Schema(description = "Deadline (yyyy-MM-dd)", example = "2026-02-01")
+    public LocalDate dueDate;
 
-    @io.swagger.v3.oas.annotations.media.Schema(description = "ID kategorii (może być null)", example = "1")
-    public java.lang.Long categoryId;
+    @Schema(description = "ID kategorii (może być null)", example = "1")
+    public Long categoryId;
 }

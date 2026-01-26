@@ -1,19 +1,36 @@
 package pl.taskmanager.taskmanager.controller.view;
 
-@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(LoginController.class)
-@org.springframework.context.annotation.Import(pl.taskmanager.taskmanager.config.SecurityConfig.class)
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
+import org.springframework.context.annotation.Import;
+
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import pl.taskmanager.taskmanager.config.SecurityConfig;
+import pl.taskmanager.taskmanager.service.UserService;
+
+@WebMvcTest(LoginController.class)
+@Import(SecurityConfig.class)
 class LoginControllerTest {
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private org.springframework.test.web.servlet.MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @org.springframework.test.context.bean.override.mockito.MockitoBean
-    private pl.taskmanager.taskmanager.service.UserService userService;
+    @MockitoBean
+    private UserService userService;
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldShowLoginForm() throws Exception {
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/login"))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("login"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/login"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.view().name("login"));
     }
 }

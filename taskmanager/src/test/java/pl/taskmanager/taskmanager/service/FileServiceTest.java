@@ -1,59 +1,83 @@
 package pl.taskmanager.taskmanager.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.core.io.Resource;
+import org.springframework.mock.web.MockMultipartFile;
+
+import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 class FileServiceTest {
 
     private final FileService fileService = new FileService();
-    private final java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
+    private final Path uploadDir = Paths.get("uploads");
 
-    @org.junit.jupiter.api.BeforeEach
-    void setUp() throws java.io.IOException {
-        if (!java.nio.file.Files.exists(uploadDir)) {
-            java.nio.file.Files.createDirectories(uploadDir);
+    @BeforeEach
+    void setUp() throws IOException {
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
         }
     }
 
-    @org.junit.jupiter.api.AfterEach
-    void tearDown() throws java.io.IOException {
+    @AfterEach
+    void tearDown() throws IOException {
+        // optional cleanup hook (kept for symmetry / future use)
     }
 
-    @org.junit.jupiter.api.Test
-    void storeFile_Success() throws java.io.IOException {
-        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile("file", "test.txt", "text/plain", "Hello World".getBytes());
+    @Test
+    void storeFile_Success() throws IOException {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.txt",
+                "text/plain",
+                "Hello World".getBytes()
+        );
+
         String storedName = fileService.storeFile(file, 1L);
 
-        org.junit.jupiter.api.Assertions.assertEquals("1_test.txt", storedName);
-        org.junit.jupiter.api.Assertions.assertTrue(java.nio.file.Files.exists(uploadDir.resolve(storedName)));
-        
-        java.nio.file.Files.deleteIfExists(uploadDir.resolve(storedName));
+        assertEquals("1_test.txt", storedName);
+        assertTrue(Files.exists(uploadDir.resolve(storedName)));
+
+        Files.deleteIfExists(uploadDir.resolve(storedName));
     }
 
-    @org.junit.jupiter.api.Test
-    void loadFileAsResource_Success() throws java.io.IOException {
+    @Test
+    void loadFileAsResource_Success() throws IOException {
         String filename = "test_load.txt";
-        java.nio.file.Path path = uploadDir.resolve(filename);
-        java.nio.file.Files.write(path, "content".getBytes());
+        Path path = uploadDir.resolve(filename);
+        Files.write(path, "content".getBytes());
 
-        org.springframework.core.io.Resource resource = fileService.loadFileAsResource(filename);
-        org.junit.jupiter.api.Assertions.assertNotNull(resource);
-        org.junit.jupiter.api.Assertions.assertTrue(resource.exists());
+        Resource resource = fileService.loadFileAsResource(filename);
 
-        java.nio.file.Files.deleteIfExists(path);
+        assertNotNull(resource);
+        assertTrue(resource.exists());
+
+        Files.deleteIfExists(path);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void loadFileAsResource_NotFound() {
-        org.junit.jupiter.api.Assertions.assertThrows(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class, () -> {
-            fileService.loadFileAsResource("non_existent.txt");
-        });
+        assertThrows(ResourceNotFoundException.class, () ->
+                fileService.loadFileAsResource("non_existent.txt")
+        );
     }
 
-    @org.junit.jupiter.api.Test
-    void deleteFile_Success() throws java.io.IOException {
+    @Test
+    void deleteFile_Success() throws IOException {
         String filename = "test_delete.txt";
-        java.nio.file.Path path = uploadDir.resolve(filename);
-        java.nio.file.Files.write(path, "content".getBytes());
+        Path path = uploadDir.resolve(filename);
+        Files.write(path, "content".getBytes());
 
         fileService.deleteFile(filename);
-        org.junit.jupiter.api.Assertions.assertFalse(java.nio.file.Files.exists(path));
+
+        assertFalse(Files.exists(path));
     }
 }

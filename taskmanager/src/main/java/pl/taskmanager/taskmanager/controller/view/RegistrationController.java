@@ -1,28 +1,47 @@
 package pl.taskmanager.taskmanager.controller.view;
 
-@org.springframework.stereotype.Controller
+import jakarta.validation.Valid;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+
+import pl.taskmanager.taskmanager.dto.RegisterRequest;
+import pl.taskmanager.taskmanager.service.UserService;
+
+@Controller
 public class RegistrationController {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RegistrationController.class);
+    private static final Logger log = LoggerFactory.getLogger(RegistrationController.class);
 
-    private final pl.taskmanager.taskmanager.service.UserService userService;
+    private final UserService userService;
 
-    public RegistrationController(pl.taskmanager.taskmanager.service.UserService userService) {
+    public RegistrationController(UserService userService) {
         this.userService = userService;
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/register")
-    public String showRegistrationForm(org.springframework.ui.Model model) {
+    @GetMapping("/register")
+    public String showRegistrationForm(Model model) {
         log.debug("Showing registration form");
-        model.addAttribute("registerRequest", new pl.taskmanager.taskmanager.dto.RegisterRequest());
+        model.addAttribute("registerRequest", new RegisterRequest());
         return "register";
     }
 
-    @org.springframework.web.bind.annotation.PostMapping("/register")
-    public String registerUser(@jakarta.validation.Valid @org.springframework.web.bind.annotation.ModelAttribute("registerRequest") pl.taskmanager.taskmanager.dto.RegisterRequest registerRequest,
-                               org.springframework.validation.BindingResult bindingResult,
-                               org.springframework.ui.Model model) {
+    @PostMapping("/register")
+    public String registerUser(
+            @Valid @ModelAttribute("registerRequest") RegisterRequest registerRequest,
+            BindingResult bindingResult,
+            Model model
+    ) {
         log.info("Attempting to register user: {}", registerRequest.getUsername());
+
         if (bindingResult.hasErrors()) {
             log.warn("Registration validation failed for user: {}", registerRequest.getUsername());
             return "register";
@@ -31,7 +50,7 @@ public class RegistrationController {
         try {
             userService.register(registerRequest);
             log.info("User {} registered successfully", registerRequest.getUsername());
-        } catch (java.lang.IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Registration failed for user {}: {}", registerRequest.getUsername(), e.getMessage());
             model.addAttribute("registrationError", e.getMessage());
             return "register";

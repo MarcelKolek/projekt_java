@@ -1,293 +1,331 @@
 package pl.taskmanager.taskmanager.service;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import pl.taskmanager.taskmanager.dao.TaskJdbcDao;
+import pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao;
+import pl.taskmanager.taskmanager.dto.TaskRequest;
+import pl.taskmanager.taskmanager.dto.TaskResponse;
+import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
+import pl.taskmanager.taskmanager.entity.Category;
+import pl.taskmanager.taskmanager.entity.Task;
+import pl.taskmanager.taskmanager.entity.TaskStatus;
+import pl.taskmanager.taskmanager.entity.User;
+import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
+import pl.taskmanager.taskmanager.repository.CategoryRepository;
+import pl.taskmanager.taskmanager.repository.TaskRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 class TaskServiceTest {
 
-    @org.mockito.Mock
-    private pl.taskmanager.taskmanager.repository.TaskRepository taskRepository;
+    @Mock
+    private TaskRepository taskRepository;
 
-    @org.mockito.Mock
-    private pl.taskmanager.taskmanager.service.UserService userService;
+    @Mock
+    private UserService userService;
 
-    @org.mockito.Mock
-    private pl.taskmanager.taskmanager.repository.CategoryRepository categoryRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
 
-    @org.mockito.Mock
-    private pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao;
+    @Mock
+    private TaskJdbcDao taskJdbcDao;
 
-    @org.mockito.Mock
-    private pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao taskStatsJdbcDao;
+    @Mock
+    private TaskStatsJdbcDao taskStatsJdbcDao;
 
-    @org.mockito.InjectMocks
-    private pl.taskmanager.taskmanager.service.TaskService taskService;
+    @InjectMocks
+    private TaskService taskService;
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void setUp() {
-        org.mockito.MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldListTasks() {
-        org.mockito.Mockito.when(taskRepository.search(
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any(),
-                        org.mockito.ArgumentMatchers.any()
-                ))
-                .thenReturn(org.springframework.data.domain.Page.empty());
+        when(taskRepository.search(
+                any(), any(), any(), any(), any(), any(), any()
+        )).thenReturn(Page.empty());
 
-        org.springframework.data.domain.Page<pl.taskmanager.taskmanager.dto.TaskResponse> result =
-                taskService.list("user", null, null, null, null, null, org.springframework.data.domain.Pageable.unpaged());
+        Page<TaskResponse> result = taskService.list(
+                "user",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Pageable.unpaged()
+        );
 
-        org.assertj.core.api.Assertions.assertThat(result).isEmpty();
+        assertThat(result).isEmpty();
 
-        org.mockito.Mockito.verify(taskRepository).search(
-                org.mockito.ArgumentMatchers.eq("user"),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any()
+        verify(taskRepository).search(
+                eq("user"),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any()
         );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldSaveTask() {
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setTitle("Test");
 
-        org.mockito.Mockito.when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.save(task)).thenReturn(task);
 
-        pl.taskmanager.taskmanager.dto.TaskResponse saved = taskService.save(task);
+        TaskResponse saved = taskService.save(task);
 
-        org.assertj.core.api.Assertions.assertThat(saved.title).isEqualTo("Test");
-        org.mockito.Mockito.verify(taskRepository).save(task);
+        assertThat(saved.title).isEqualTo("Test");
+        verify(taskRepository).save(task);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldGetTaskById() {
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setUsername("owner");
 
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setUser(user);
 
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.of(task));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.getById(1L, "owner");
+        TaskResponse result = taskService.getById(1L, "owner");
 
-        org.assertj.core.api.Assertions.assertThat(result.id).isEqualTo(task.getId());
+        assertThat(result.id).isEqualTo(task.getId());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldThrowWhenTaskNotFound() {
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.getById(1L, "any"))
-                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> taskService.getById(1L, "any"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldThrowWhenTaskNotOwnedByUser() {
-        pl.taskmanager.taskmanager.entity.User owner = new pl.taskmanager.taskmanager.entity.User();
+        User owner = new User();
         owner.setUsername("owner");
 
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setUser(owner);
 
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.of(task));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.getById(1L, "stranger"))
-                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> taskService.getById(1L, "stranger"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldDeleteTask() {
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setUsername("owner");
 
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setUser(user);
 
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.of(task));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
         taskService.delete(1L, "owner");
 
-        org.mockito.Mockito.verify(taskRepository).delete(task);
+        verify(taskRepository).delete(task);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldCreateTask() {
-        java.lang.String username = "testuser";
+        String username = "testuser";
 
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setId(1L);
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        TaskRequest req = new TaskRequest();
         req.title = "New Task";
-        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.TODO;
+        req.status = TaskStatus.TODO;
 
-        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
-        org.mockito.Mockito.when(taskRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class)))
+        when(userService.findByUsername(username)).thenReturn(user);
+        when(taskRepository.save(any(Task.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.create(req, username);
+        TaskResponse result = taskService.create(req, username);
 
-        org.assertj.core.api.Assertions.assertThat(result.title).isEqualTo("New Task");
-        org.mockito.Mockito.verify(taskRepository).save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class));
+        assertThat(result.title).isEqualTo("New Task");
+        verify(taskRepository).save(any(Task.class));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldUpdateTask() {
-        java.lang.String username = "testuser";
+        String username = "testuser";
 
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setId(1L);
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setId(1L);
         task.setTitle("Old Title");
         task.setUser(user);
 
-        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        TaskRequest req = new TaskRequest();
         req.title = "Updated Title";
-        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.IN_PROGRESS;
+        req.status = TaskStatus.IN_PROGRESS;
 
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.of(task));
-        org.mockito.Mockito.when(taskRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class)))
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.update(1L, req, username);
+        TaskResponse result = taskService.update(1L, req, username);
 
-        org.assertj.core.api.Assertions.assertThat(result.title).isEqualTo("Updated Title");
-        org.mockito.Mockito.verify(taskRepository).save(task);
+        assertThat(result.title).isEqualTo("Updated Title");
+        verify(taskRepository).save(task);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldFindAllByUser() {
-        java.lang.String username = "testuser";
+        String username = "testuser";
 
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setUsername(username);
 
-        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
-        org.mockito.Mockito.when(taskRepository.findAllByUser(user)).thenReturn(java.util.List.of(new pl.taskmanager.taskmanager.entity.Task()));
+        when(userService.findByUsername(username)).thenReturn(user);
+        when(taskRepository.findAllByUser(user))
+                .thenReturn(List.of(new Task()));
 
-        java.util.List<pl.taskmanager.taskmanager.dto.TaskResponse> result = taskService.findAllByUser(username);
+        List<TaskResponse> result = taskService.findAllByUser(username);
 
-        org.assertj.core.api.Assertions.assertThat(result).hasSize(1);
+        assertThat(result).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldUpdateWithFile() {
-        java.lang.String username = "testuser";
+        String username = "testuser";
 
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        User user = new User();
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
+        Task task = new Task();
         task.setUser(user);
 
-        org.mockito.Mockito.when(taskRepository.findById(1L)).thenReturn(java.util.Optional.of(task));
-        org.mockito.Mockito.when(taskRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class)))
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.updateWithFile(1L, "file.txt", username);
+        TaskResponse result = taskService.updateWithFile(1L, "file.txt", username);
 
-        org.assertj.core.api.Assertions.assertThat(result.attachmentFilename).isEqualTo("file.txt");
+        assertThat(result.attachmentFilename).isEqualTo("file.txt");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldUpdateTaskStatusInRepo() {
-        pl.taskmanager.taskmanager.entity.Task task = new pl.taskmanager.taskmanager.entity.Task();
-        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.TODO);
-        task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.DONE);
+        Task task = new Task();
+        task.setStatus(TaskStatus.TODO);
+        task.setStatus(TaskStatus.DONE);
 
-        org.assertj.core.api.Assertions.assertThat(task.getStatus()).isEqualTo(pl.taskmanager.taskmanager.entity.TaskStatus.DONE);
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.DONE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldCreateTaskWithCategory() {
-        java.lang.String username = "testuser";
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        String username = "testuser";
+
+        User user = new User();
         user.setId(1L);
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.entity.Category category = new pl.taskmanager.taskmanager.entity.Category();
+        Category category = new Category();
         category.setId(10L);
         category.setUser(user);
 
-        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        TaskRequest req = new TaskRequest();
         req.title = "Task with category";
         req.categoryId = 10L;
 
-        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
-        org.mockito.Mockito.when(categoryRepository.findById(10L)).thenReturn(java.util.Optional.of(category));
-        org.mockito.Mockito.when(taskRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class)))
+        when(userService.findByUsername(username)).thenReturn(user);
+        when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
+        when(taskRepository.save(any(Task.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.create(req, username);
+        TaskResponse result = taskService.create(req, username);
 
-        org.assertj.core.api.Assertions.assertThat(result.category.id).isEqualTo(10L);
+        assertThat(result.category.id).isEqualTo(10L);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldThrowWhenCategoryNotFound() {
-        java.lang.String username = "testuser";
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        String username = "testuser";
+
+        User user = new User();
         user.setId(1L);
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        TaskRequest req = new TaskRequest();
         req.categoryId = 99L;
 
-        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
-        org.mockito.Mockito.when(categoryRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+        when(userService.findByUsername(username)).thenReturn(user);
+        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.create(req, username))
-                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class)
+        assertThatThrownBy(() -> taskService.create(req, username))
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Category not found");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldThrowWhenCategoryNotOwnedByUser() {
-        java.lang.String username = "testuser";
-        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        String username = "testuser";
+
+        User user = new User();
         user.setId(1L);
         user.setUsername(username);
 
-        pl.taskmanager.taskmanager.entity.User otherUser = new pl.taskmanager.taskmanager.entity.User();
+        User otherUser = new User();
         otherUser.setId(2L);
 
-        pl.taskmanager.taskmanager.entity.Category category = new pl.taskmanager.taskmanager.entity.Category();
+        Category category = new Category();
         category.setId(10L);
         category.setUser(otherUser);
 
-        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        TaskRequest req = new TaskRequest();
         req.categoryId = 10L;
 
-        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
-        org.mockito.Mockito.when(categoryRepository.findById(10L)).thenReturn(java.util.Optional.of(category));
+        when(userService.findByUsername(username)).thenReturn(user);
+        when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.create(req, username))
-                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class)
+        assertThatThrownBy(() -> taskService.create(req, username))
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Category not found");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldGetStats() {
-        java.lang.String username = "testuser";
-        org.mockito.Mockito.when(userService.findIdByUsername(username)).thenReturn(1L);
-        pl.taskmanager.taskmanager.dto.TaskStatsResponse stats = new pl.taskmanager.taskmanager.dto.TaskStatsResponse(10, 5, 3, 2, 20.0);
-        org.mockito.Mockito.when(taskStatsJdbcDao.getStats(1L)).thenReturn(stats);
+        String username = "testuser";
 
-        pl.taskmanager.taskmanager.dto.TaskStatsResponse result = taskService.getStats(username);
+        when(userService.findIdByUsername(username)).thenReturn(1L);
 
-        org.assertj.core.api.Assertions.assertThat(result).isSameAs(stats);
+        TaskStatsResponse stats =
+                new TaskStatsResponse(10, 5, 3, 2, 20.0);
+
+        when(taskStatsJdbcDao.getStats(1L)).thenReturn(stats);
+
+        TaskStatsResponse result = taskService.getStats(username);
+
+        assertThat(result).isSameAs(stats);
     }
 }

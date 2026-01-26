@@ -1,20 +1,27 @@
 package pl.taskmanager.taskmanager.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
 import org.springframework.data.repository.query.Param;
 
-public interface TaskRepository
-        extends org.springframework.data.jpa.repository.JpaRepository<
-                pl.taskmanager.taskmanager.entity.Task,
-                java.lang.Long
-        > {
+import pl.taskmanager.taskmanager.entity.Task;
+import pl.taskmanager.taskmanager.entity.TaskStatus;
+import pl.taskmanager.taskmanager.entity.User;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Modifying
     @Query("update Task t set t.category = null where t.category.id = :categoryId")
     int clearCategoryForTasks(
-            @Param("categoryId")
-            java.lang.Long categoryId
+            @Param("categoryId") Long categoryId
     );
 
     @Query("""
@@ -26,30 +33,15 @@ public interface TaskRepository
           and (:dueBefore is null or t.dueDate < :dueBefore)
           and (:dueAfter is null or t.dueDate > :dueAfter)
         """)
-    org.springframework.data.domain.Page<
-            pl.taskmanager.taskmanager.entity.Task
-    > search(
-            @Param("username")
-            java.lang.String username,
-
-            @Param("status")
-            pl.taskmanager.taskmanager.entity.TaskStatus status,
-
-            @Param("categoryId")
-            java.lang.Long categoryId,
-
-            @Param("q")
-            java.lang.String q,
-
-            @Param("dueBefore")
-            java.time.LocalDate dueBefore,
-
-            @Param("dueAfter")
-            java.time.LocalDate dueAfter,
-
-            org.springframework.data.domain.Pageable pageable
+    Page<Task> search(
+            @Param("username") String username,
+            @Param("status") TaskStatus status,
+            @Param("categoryId") Long categoryId,
+            @Param("q") String q,
+            @Param("dueBefore") LocalDate dueBefore,
+            @Param("dueAfter") LocalDate dueAfter,
+            Pageable pageable
     );
 
-    java.util.List<pl.taskmanager.taskmanager.entity.Task>
-    findAllByUser(pl.taskmanager.taskmanager.entity.User user);
+    List<Task> findAllByUser(User user);
 }

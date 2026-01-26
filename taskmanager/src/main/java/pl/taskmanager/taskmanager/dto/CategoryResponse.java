@@ -1,19 +1,23 @@
 package pl.taskmanager.taskmanager.dto;
 
+import pl.taskmanager.taskmanager.entity.Category;
+
 public class CategoryResponse {
-    public java.lang.Long id;
-    public java.lang.String name;
-    public java.lang.String color;
 
-    public CategoryResponse() {}
+    public Long id;
+    public String name;
+    public String color;
 
-    public CategoryResponse(pl.taskmanager.taskmanager.entity.Category category) {
+    public CategoryResponse() {
+    }
+
+    public CategoryResponse(Category category) {
         this.id = category.getId();
         this.name = category.getName();
         this.color = category.getColor();
     }
 
-    public CategoryResponse(java.lang.Long id, java.lang.String name, java.lang.String color) {
+    public CategoryResponse(Long id, String name, String color) {
         this.id = id;
         this.name = name;
         this.color = color;

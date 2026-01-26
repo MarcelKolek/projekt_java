@@ -1,33 +1,53 @@
 package pl.taskmanager.taskmanager.service;
 
-@org.springframework.stereotype.Service
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
+@Service
 public class FileService {
 
-    private final java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
+    private final Path uploadDir = Paths.get("uploads");
 
-    public String storeFile(org.springframework.web.multipart.MultipartFile file, Long taskId) throws java.io.IOException {
-        if (!java.nio.file.Files.exists(uploadDir)) {
-            java.nio.file.Files.createDirectories(uploadDir);
+    public String storeFile(MultipartFile file, Long taskId) throws IOException {
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
         }
 
         String originalFilename = file.getOriginalFilename();
         String storedFilename = taskId + "_" + originalFilename;
-        java.nio.file.Path destination = uploadDir.resolve(storedFilename);
+        Path destination = uploadDir.resolve(storedFilename);
 
-        java.nio.file.Files.copy(file.getInputStream(), destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(
+                file.getInputStream(),
+                destination,
+                StandardCopyOption.REPLACE_EXISTING
+        );
+
         return storedFilename;
     }
 
-    public org.springframework.core.io.Resource loadFileAsResource(String filename) throws java.io.IOException {
-        java.nio.file.Path filePath = uploadDir.resolve(filename);
-        if (!java.nio.file.Files.exists(filePath)) {
-            throw new pl.taskmanager.taskmanager.exception.ResourceNotFoundException("Plik nie istnieje");
+    public Resource loadFileAsResource(String filename) throws IOException {
+        Path filePath = uploadDir.resolve(filename);
+
+        if (!Files.exists(filePath)) {
+            throw new ResourceNotFoundException("Plik nie istnieje");
         }
-        return new org.springframework.core.io.UrlResource(filePath.toUri());
+
+        return new UrlResource(filePath.toUri());
     }
 
-    public void deleteFile(String filename) throws java.io.IOException {
-        java.nio.file.Path filePath = uploadDir.resolve(filename);
-        java.nio.file.Files.deleteIfExists(filePath);
+    public void deleteFile(String filename) throws IOException {
+        Path filePath = uploadDir.resolve(filename);
+        Files.deleteIfExists(filePath);
     }
 }
