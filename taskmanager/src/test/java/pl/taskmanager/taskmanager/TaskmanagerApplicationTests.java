@@ -10,4 +10,9 @@ class TaskmanagerApplicationTests {
 	void contextLoads() {
 	}
 
+	@Test
+	void mainMethodTest() {
+		TaskmanagerApplication.main(new String[] {});
+	}
+
 }

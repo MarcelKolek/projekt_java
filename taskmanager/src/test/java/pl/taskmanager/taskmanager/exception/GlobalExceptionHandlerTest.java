@@ -18,12 +18,23 @@ class GlobalExceptionHandlerTest {
         org.springframework.validation.BindingResult bindingResult = org.mockito.Mockito.mock(org.springframework.validation.BindingResult.class);
         org.mockito.Mockito.when(ex.getBindingResult()).thenReturn(bindingResult);
         org.mockito.Mockito.when(bindingResult.getAllErrors()).thenReturn(java.util.List.of(
-                new org.springframework.validation.FieldError("obj", "field", "message")
+                new org.springframework.validation.FieldError("obj", "field", "message"),
+                new org.springframework.validation.ObjectError("obj", "global message")
         ));
 
         org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleValidationExceptions(ex);
         org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
         org.assertj.core.api.Assertions.assertThat(response.getBody().get("field")).isEqualTo("message");
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("obj")).isEqualTo("global message");
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldHandleNoResourceFound() {
+        org.springframework.web.servlet.resource.NoResourceFoundException ex = org.mockito.Mockito.mock(org.springframework.web.servlet.resource.NoResourceFoundException.class);
+        org.mockito.Mockito.when(ex.getResourcePath()).thenReturn("favicon.ico");
+        org.springframework.http.ResponseEntity<java.util.Map<String, String>> response = handler.handleNoResourceFound(ex);
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
+        org.assertj.core.api.Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
     }
 
     @org.junit.jupiter.api.Test

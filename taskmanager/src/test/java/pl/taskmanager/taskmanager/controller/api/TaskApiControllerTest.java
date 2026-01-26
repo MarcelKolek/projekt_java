@@ -250,4 +250,160 @@ class TaskApiControllerTest {
                         org.hamcrest.Matchers.containsString("Plik zapisany")
                 ));
     }
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldUpdateTaskWithoutFile() throws java.lang.Exception {
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.title = "Updated Task";
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.DONE;
+
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        saved.id = 1L;
+        saved.title = "Updated Task";
+
+        org.mockito.Mockito.when(taskService.update(
+                        org.mockito.Mockito.eq(1L),
+                        org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.dto.TaskRequest.class),
+                        org.mockito.Mockito.eq("user")
+                ))
+                .thenReturn(saved);
+
+        org.springframework.mock.web.MockMultipartFile taskPart =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "task",
+                        "",
+                        "application/json",
+                        objectMapper.writeValueAsString(req).getBytes()
+                );
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks/1")
+                                .file(taskPart)
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                                .with(request -> { request.setMethod("PUT"); return request; })
+                )
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("Updated Task"));
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldUpdateTaskWithFile() throws java.lang.Exception {
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.title = "Updated With File";
+        req.status = pl.taskmanager.taskmanager.entity.TaskStatus.DONE;
+
+        pl.taskmanager.taskmanager.dto.TaskResponse saved = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        saved.id = 1L;
+        saved.title = "Updated With File";
+
+        org.mockito.Mockito.when(taskService.update(
+                        org.mockito.Mockito.eq(1L),
+                        org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.dto.TaskRequest.class),
+                        org.mockito.Mockito.eq("user")
+                ))
+                .thenReturn(saved);
+
+        org.mockito.Mockito.when(taskService.updateWithFile(
+                        org.mockito.Mockito.eq(1L),
+                        org.mockito.ArgumentMatchers.any(),
+                        org.mockito.Mockito.eq("user")
+                ))
+                .thenReturn(saved);
+
+        org.springframework.mock.web.MockMultipartFile taskPart =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "task",
+                        "",
+                        "application/json",
+                        objectMapper.writeValueAsString(req).getBytes()
+                );
+
+        org.springframework.mock.web.MockMultipartFile filePart =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file",
+                        "test.txt",
+                        "text/plain",
+                        "content".getBytes()
+                );
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks/1")
+                                .file(taskPart)
+                                .file(filePart)
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                                .with(request -> { request.setMethod("PUT"); return request; })
+                )
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("Updated With File"));
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldFailUploadEmptyFile() throws java.lang.Exception {
+        org.springframework.mock.web.MockMultipartFile file =
+                new org.springframework.mock.web.MockMultipartFile("file", "test.txt", "text/plain", new byte[0]);
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/v1/tasks/upload")
+                                .file(file)
+                                .param("taskId", "1")
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                )
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("Plik jest pusty"));
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldDownloadFile() throws java.lang.Exception {
+        org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource("content".getBytes()) {
+            @Override
+            public String getFilename() { return "test.txt"; }
+        };
+
+        org.mockito.Mockito.when(fileService.loadFileAsResource("test.txt")).thenReturn(resource);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/tasks/download/test.txt"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"test.txt\""))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("content".getBytes()));
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldDeleteAttachment() throws java.lang.Exception {
+        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        task.id = 1L;
+        task.attachmentFilename = "test.txt";
+
+        org.mockito.Mockito.when(taskService.getById(1L, "user")).thenReturn(task);
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/tasks/1/attachment")
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                )
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
+
+        org.mockito.Mockito.verify(fileService).deleteFile("test.txt");
+        org.mockito.Mockito.verify(taskService).updateWithFile(1L, null, "user");
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "user")
+    void shouldDeleteAttachmentWhenNoneExists() throws java.lang.Exception {
+        pl.taskmanager.taskmanager.dto.TaskResponse task = new pl.taskmanager.taskmanager.dto.TaskResponse();
+        task.id = 1L;
+        task.attachmentFilename = null;
+
+        org.mockito.Mockito.when(taskService.getById(1L, "user")).thenReturn(task);
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/tasks/1/attachment")
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                )
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
+
+        org.mockito.Mockito.verify(fileService, org.mockito.Mockito.never()).deleteFile(org.mockito.Mockito.anyString());
+    }
 }

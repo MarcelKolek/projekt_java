@@ -9,7 +9,13 @@ class TaskServiceTest {
     private pl.taskmanager.taskmanager.service.UserService userService;
 
     @org.mockito.Mock
+    private pl.taskmanager.taskmanager.repository.CategoryRepository categoryRepository;
+
+    @org.mockito.Mock
     private pl.taskmanager.taskmanager.dao.TaskJdbcDao taskJdbcDao;
+
+    @org.mockito.Mock
+    private pl.taskmanager.taskmanager.dao.TaskStatsJdbcDao taskStatsJdbcDao;
 
     @org.mockito.InjectMocks
     private pl.taskmanager.taskmanager.service.TaskService taskService;
@@ -203,5 +209,85 @@ class TaskServiceTest {
         task.setStatus(pl.taskmanager.taskmanager.entity.TaskStatus.DONE);
 
         org.assertj.core.api.Assertions.assertThat(task.getStatus()).isEqualTo(pl.taskmanager.taskmanager.entity.TaskStatus.DONE);
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldCreateTaskWithCategory() {
+        java.lang.String username = "testuser";
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        user.setId(1L);
+        user.setUsername(username);
+
+        pl.taskmanager.taskmanager.entity.Category category = new pl.taskmanager.taskmanager.entity.Category();
+        category.setId(10L);
+        category.setUser(user);
+
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.title = "Task with category";
+        req.categoryId = 10L;
+
+        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
+        org.mockito.Mockito.when(categoryRepository.findById(10L)).thenReturn(java.util.Optional.of(category));
+        org.mockito.Mockito.when(taskRepository.save(org.mockito.ArgumentMatchers.any(pl.taskmanager.taskmanager.entity.Task.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        pl.taskmanager.taskmanager.dto.TaskResponse result = taskService.create(req, username);
+
+        org.assertj.core.api.Assertions.assertThat(result.category.id).isEqualTo(10L);
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldThrowWhenCategoryNotFound() {
+        java.lang.String username = "testuser";
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        user.setId(1L);
+        user.setUsername(username);
+
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.categoryId = 99L;
+
+        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
+        org.mockito.Mockito.when(categoryRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.create(req, username))
+                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class)
+                .hasMessage("Category not found");
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldThrowWhenCategoryNotOwnedByUser() {
+        java.lang.String username = "testuser";
+        pl.taskmanager.taskmanager.entity.User user = new pl.taskmanager.taskmanager.entity.User();
+        user.setId(1L);
+        user.setUsername(username);
+
+        pl.taskmanager.taskmanager.entity.User otherUser = new pl.taskmanager.taskmanager.entity.User();
+        otherUser.setId(2L);
+
+        pl.taskmanager.taskmanager.entity.Category category = new pl.taskmanager.taskmanager.entity.Category();
+        category.setId(10L);
+        category.setUser(otherUser);
+
+        pl.taskmanager.taskmanager.dto.TaskRequest req = new pl.taskmanager.taskmanager.dto.TaskRequest();
+        req.categoryId = 10L;
+
+        org.mockito.Mockito.when(userService.findByUsername(username)).thenReturn(user);
+        org.mockito.Mockito.when(categoryRepository.findById(10L)).thenReturn(java.util.Optional.of(category));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> taskService.create(req, username))
+                .isInstanceOf(pl.taskmanager.taskmanager.exception.ResourceNotFoundException.class)
+                .hasMessage("Category not found");
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldGetStats() {
+        java.lang.String username = "testuser";
+        org.mockito.Mockito.when(userService.findIdByUsername(username)).thenReturn(1L);
+        pl.taskmanager.taskmanager.dto.TaskStatsResponse stats = new pl.taskmanager.taskmanager.dto.TaskStatsResponse(10, 5, 3, 2, 20.0);
+        org.mockito.Mockito.when(taskStatsJdbcDao.getStats(1L)).thenReturn(stats);
+
+        pl.taskmanager.taskmanager.dto.TaskStatsResponse result = taskService.getStats(username);
+
+        org.assertj.core.api.Assertions.assertThat(result).isSameAs(stats);
     }
 }

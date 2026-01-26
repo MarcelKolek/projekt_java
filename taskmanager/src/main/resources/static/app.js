@@ -443,6 +443,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   await loadStats();
 });
 
-// potrzebne, bo onclick z HTML
 window.openEdit = openEdit;
 window.removeTask = removeTask;
