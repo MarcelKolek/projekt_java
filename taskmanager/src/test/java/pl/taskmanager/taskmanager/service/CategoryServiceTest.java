@@ -59,6 +59,8 @@ class CategoryServiceTest {
         CategoryResponse result = categoryService.create(req, "user");
 
         assertThat(result.name).isEqualTo("Test");
+
+        verify(userService).findByUsername("user");
         verify(categoryRepository, times(1)).save(any(Category.class));
     }
 
@@ -78,6 +80,8 @@ class CategoryServiceTest {
 
         categoryService.delete(catId, "user");
 
+        verify(userService).findByUsername("user");
+        verify(categoryRepository).findById(catId);
         verify(taskJdbcDao, times(1)).clearCategoryForTasks(catId);
         verify(categoryRepository, times(1)).deleteById(catId);
     }
@@ -106,6 +110,9 @@ class CategoryServiceTest {
         categoryService.update(catId, req, "user");
 
         assertThat(cat.getName()).isEqualTo("New");
+
+        verify(userService).findByUsername("user");
+        verify(categoryRepository).findById(catId);
         verify(categoryRepository).save(cat);
     }
 
@@ -129,6 +136,10 @@ class CategoryServiceTest {
 
         assertThatThrownBy(() -> categoryService.update(catId, new CategoryRequest(), "stranger"))
                 .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(userService).findByUsername("stranger");
+        verify(categoryRepository).findById(catId);
+        verify(categoryRepository, never()).save(any(Category.class));
     }
 
     @Test
@@ -142,6 +153,9 @@ class CategoryServiceTest {
         List<CategoryResponse> result = categoryService.getAll("user");
 
         assertThat(result).hasSize(1);
+
+        verify(userService).findByUsername("user");
+        verify(categoryRepository).findAllByUser(user);
     }
 
     @Test
@@ -161,5 +175,8 @@ class CategoryServiceTest {
         CategoryResponse result = categoryService.getById(catId, "user");
 
         assertThat(result.name).isEqualTo("Work");
+
+        verify(userService).findByUsername("user");
+        verify(categoryRepository).findById(catId);
     }
 }

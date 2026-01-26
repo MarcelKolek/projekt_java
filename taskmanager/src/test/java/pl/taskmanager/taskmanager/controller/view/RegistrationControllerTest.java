@@ -1,6 +1,7 @@
 package pl.taskmanager.taskmanager.controller.view;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -31,6 +32,8 @@ class RegistrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
                 .andExpect(model().attributeExists("registerRequest"));
+
+        Mockito.verifyNoInteractions(userService);
     }
 
     @Test
@@ -42,6 +45,8 @@ class RegistrationControllerTest {
                         .param("email", "test@test.com"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login?registered"));
+
+        Mockito.verify(userService).register(Mockito.any());
     }
 
     @Test
@@ -52,5 +57,7 @@ class RegistrationControllerTest {
                         .param("password", "123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"));
+
+        Mockito.verifyNoInteractions(userService);
     }
 }

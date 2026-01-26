@@ -289,10 +289,12 @@ public class TaskApiController {
 
         TaskResponse task = taskService.getById(id, userDetails.getUsername());
 
-        if (task.attachmentFilename != null) {
-            fileService.deleteFile(task.attachmentFilename);
-            taskService.updateWithFile(id, null, userDetails.getUsername());
+        String filename = task.attachmentFilename;
+        if (filename != null && !filename.isBlank()) {
+            fileService.deleteFile(filename);
         }
+
+        taskService.updateWithFile(id, null, userDetails.getUsername());
 
         return ResponseEntity.noContent().build();
     }

@@ -44,6 +44,9 @@ class GlobalExceptionHandlerTest {
         Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
         Assertions.assertThat(response.getBody().get("field")).isEqualTo("message");
         Assertions.assertThat(response.getBody().get("obj")).isEqualTo("global message");
+
+        Mockito.verify(ex).getBindingResult();
+        Mockito.verify(bindingResult).getAllErrors();
     }
 
     @Test
@@ -55,6 +58,8 @@ class GlobalExceptionHandlerTest {
 
         Assertions.assertThat(response.getStatusCode().value()).isEqualTo(404);
         Assertions.assertThat(response.getBody().get("error")).isEqualTo("Not found");
+
+        Mockito.verify(ex).getResourcePath();
     }
 
     @Test

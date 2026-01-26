@@ -57,30 +57,18 @@ class TaskServiceTest {
 
     @Test
     void shouldListTasks() {
-        when(taskRepository.search(
-                any(), any(), any(), any(), any(), any(), any()
-        )).thenReturn(Page.empty());
+        when(taskRepository.search(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Page.empty());
 
         Page<TaskResponse> result = taskService.list(
-                "user",
-                null,
-                null,
-                null,
-                null,
-                null,
-                Pageable.unpaged()
+                "user", null, null, null, null, null, Pageable.unpaged()
         );
 
         assertThat(result).isEmpty();
 
         verify(taskRepository).search(
                 eq("user"),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any()
+                any(), any(), any(), any(), any(), any()
         );
     }
 
@@ -94,6 +82,7 @@ class TaskServiceTest {
         TaskResponse saved = taskService.save(task);
 
         assertThat(saved.title).isEqualTo("Test");
+
         verify(taskRepository).save(task);
     }
 
@@ -110,6 +99,8 @@ class TaskServiceTest {
         TaskResponse result = taskService.getById(1L, "owner");
 
         assertThat(result.id).isEqualTo(task.getId());
+
+        verify(taskRepository).findById(1L);
     }
 
     @Test
@@ -118,6 +109,8 @@ class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.getById(1L, "any"))
                 .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(taskRepository).findById(1L);
     }
 
     @Test
@@ -132,6 +125,8 @@ class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.getById(1L, "stranger"))
                 .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(taskRepository).findById(1L);
     }
 
     @Test
@@ -146,6 +141,7 @@ class TaskServiceTest {
 
         taskService.delete(1L, "owner");
 
+        verify(taskRepository).findById(1L);
         verify(taskRepository).delete(task);
     }
 
@@ -162,12 +158,13 @@ class TaskServiceTest {
         req.status = TaskStatus.TODO;
 
         when(userService.findByUsername(username)).thenReturn(user);
-        when(taskRepository.save(any(Task.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TaskResponse result = taskService.create(req, username);
 
         assertThat(result.title).isEqualTo("New Task");
+
+        verify(userService).findByUsername(username);
         verify(taskRepository).save(any(Task.class));
     }
 
@@ -189,12 +186,13 @@ class TaskServiceTest {
         req.status = TaskStatus.IN_PROGRESS;
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TaskResponse result = taskService.update(1L, req, username);
 
         assertThat(result.title).isEqualTo("Updated Title");
+
+        verify(taskRepository).findById(1L);
         verify(taskRepository).save(task);
     }
 
@@ -206,12 +204,14 @@ class TaskServiceTest {
         user.setUsername(username);
 
         when(userService.findByUsername(username)).thenReturn(user);
-        when(taskRepository.findAllByUser(user))
-                .thenReturn(List.of(new Task()));
+        when(taskRepository.findAllByUser(user)).thenReturn(List.of(new Task()));
 
         List<TaskResponse> result = taskService.findAllByUser(username);
 
         assertThat(result).hasSize(1);
+
+        verify(userService).findByUsername(username);
+        verify(taskRepository).findAllByUser(user);
     }
 
     @Test
@@ -225,12 +225,14 @@ class TaskServiceTest {
         task.setUser(user);
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TaskResponse result = taskService.updateWithFile(1L, "file.txt", username);
 
         assertThat(result.attachmentFilename).isEqualTo("file.txt");
+
+        verify(taskRepository).findById(1L);
+        verify(taskRepository).save(task);
     }
 
     @Test
@@ -260,12 +262,15 @@ class TaskServiceTest {
 
         when(userService.findByUsername(username)).thenReturn(user);
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
-        when(taskRepository.save(any(Task.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TaskResponse result = taskService.create(req, username);
 
         assertThat(result.category.id).isEqualTo(10L);
+
+        verify(userService).findByUsername(username);
+        verify(categoryRepository).findById(10L);
+        verify(taskRepository).save(any(Task.class));
     }
 
     @Test
@@ -285,6 +290,10 @@ class TaskServiceTest {
         assertThatThrownBy(() -> taskService.create(req, username))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Category not found");
+
+        verify(userService).findByUsername(username);
+        verify(categoryRepository).findById(99L);
+        verify(taskRepository, never()).save(any(Task.class));
     }
 
     @Test
@@ -311,6 +320,10 @@ class TaskServiceTest {
         assertThatThrownBy(() -> taskService.create(req, username))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Category not found");
+
+        verify(userService).findByUsername(username);
+        verify(categoryRepository).findById(10L);
+        verify(taskRepository, never()).save(any(Task.class));
     }
 
     @Test
@@ -327,5 +340,8 @@ class TaskServiceTest {
         TaskStatsResponse result = taskService.getStats(username);
 
         assertThat(result).isSameAs(stats);
+
+        verify(userService).findIdByUsername(username);
+        verify(taskStatsJdbcDao).getStats(1L);
     }
 }

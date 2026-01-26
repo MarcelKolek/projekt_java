@@ -1,38 +1,27 @@
 package pl.taskmanager.taskmanager.controller.api;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.Test;
-
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
 import org.springframework.context.annotation.Import;
-
 import org.springframework.http.MediaType;
-
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import pl.taskmanager.taskmanager.config.SecurityConfig;
-
 import pl.taskmanager.taskmanager.dto.CategoryRequest;
 import pl.taskmanager.taskmanager.dto.CategoryResponse;
-
 import pl.taskmanager.taskmanager.service.CategoryService;
 import pl.taskmanager.taskmanager.service.UserService;
-
-import java.util.List;
 
 @WebMvcTest(CategoryApiController.class)
 @Import(SecurityConfig.class)
@@ -63,6 +52,8 @@ class CategoryApiControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/categories"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value("Work"));
+
+        Mockito.verify(categoryService).getAll("user");
     }
 
     @Test
@@ -77,7 +68,10 @@ class CategoryApiControllerTest {
         saved.name = "New Cat";
         saved.color = "#00ff00";
 
-        Mockito.when(categoryService.create(ArgumentMatchers.any(CategoryRequest.class), Mockito.eq("user")))
+        Mockito.when(categoryService.create(
+                        ArgumentMatchers.any(CategoryRequest.class),
+                        Mockito.eq("user")
+                ))
                 .thenReturn(saved);
 
         mockMvc.perform(
@@ -88,6 +82,11 @@ class CategoryApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("New Cat"));
+
+        Mockito.verify(categoryService).create(
+                ArgumentMatchers.any(CategoryRequest.class),
+                Mockito.eq("user")
+        );
     }
 
     @Test
@@ -98,6 +97,8 @@ class CategoryApiControllerTest {
                                 .with(SecurityMockMvcRequestPostProcessors.csrf())
                 )
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Mockito.verify(categoryService).delete(1L, "user");
     }
 
     @Test
@@ -113,6 +114,8 @@ class CategoryApiControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/categories/1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Work"));
+
+        Mockito.verify(categoryService).getById(1L, "user");
     }
 
     @Test
@@ -127,7 +130,11 @@ class CategoryApiControllerTest {
         saved.name = "Updated Cat";
         saved.color = "#0000ff";
 
-        Mockito.when(categoryService.update(Mockito.eq(1L), ArgumentMatchers.any(CategoryRequest.class), Mockito.eq("user")))
+        Mockito.when(categoryService.update(
+                        Mockito.eq(1L),
+                        ArgumentMatchers.any(CategoryRequest.class),
+                        Mockito.eq("user")
+                ))
                 .thenReturn(saved);
 
         mockMvc.perform(
@@ -138,5 +145,11 @@ class CategoryApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Updated Cat"));
+
+        Mockito.verify(categoryService).update(
+                Mockito.eq(1L),
+                ArgumentMatchers.any(CategoryRequest.class),
+                Mockito.eq("user")
+        );
     }
 }

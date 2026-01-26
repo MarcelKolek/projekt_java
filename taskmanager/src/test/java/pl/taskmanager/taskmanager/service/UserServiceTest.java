@@ -52,6 +52,9 @@ class UserServiceTest {
         assertThat(userDetails)
                 .returns("testuser", UserDetails::getUsername)
                 .returns("encodedPass", UserDetails::getPassword);
+
+        verify(userRepository).findByUsername("testuser");
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
@@ -61,6 +64,9 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.loadUserByUsername("none"))
                 .isInstanceOf(UsernameNotFoundException.class);
+
+        verify(userRepository).findByUsername("none");
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
@@ -75,6 +81,8 @@ class UserServiceTest {
 
         userService.register(req);
 
+        verify(userRepository).existsByUsername("newuser");
+        verify(passwordEncoder).encode("password");
         verify(userRepository, times(1)).save(any(User.class));
     }
 
@@ -88,6 +96,10 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.register(req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Username already exists");
+
+        verify(userRepository).existsByUsername("exists");
+        verifyNoInteractions(passwordEncoder);
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -101,5 +113,8 @@ class UserServiceTest {
         User result = userService.findByUsername("user");
 
         assertThat(result.getUsername()).isEqualTo("user");
+
+        verify(userRepository).findByUsername("user");
+        verifyNoInteractions(passwordEncoder);
     }
 }

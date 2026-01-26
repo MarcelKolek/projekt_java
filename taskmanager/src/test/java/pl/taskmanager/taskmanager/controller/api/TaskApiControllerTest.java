@@ -1,54 +1,38 @@
 package pl.taskmanager.taskmanager.controller.api;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.hamcrest.Matchers;
-
 import org.junit.jupiter.api.Test;
-
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
 import org.springframework.context.annotation.Import;
-
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-
 import org.springframework.data.domain.Page;
-
 import org.springframework.mock.web.MockMultipartFile;
-
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import pl.taskmanager.taskmanager.config.SecurityConfig;
-
 import pl.taskmanager.taskmanager.dto.TaskRequest;
 import pl.taskmanager.taskmanager.dto.TaskResponse;
 import pl.taskmanager.taskmanager.dto.TaskStatsResponse;
-
 import pl.taskmanager.taskmanager.entity.TaskStatus;
-
 import pl.taskmanager.taskmanager.exception.ResourceNotFoundException;
-
 import pl.taskmanager.taskmanager.service.CategoryService;
 import pl.taskmanager.taskmanager.service.CsvService;
 import pl.taskmanager.taskmanager.service.FileService;
 import pl.taskmanager.taskmanager.service.PdfService;
 import pl.taskmanager.taskmanager.service.TaskService;
 import pl.taskmanager.taskmanager.service.UserService;
-
-import java.util.List;
 
 @WebMvcTest(TaskApiController.class)
 @Import(SecurityConfig.class)
@@ -94,6 +78,16 @@ class TaskApiControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
+
+        Mockito.verify(taskService).list(
+                Mockito.eq("user"),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any()
+        );
     }
 
     @Test
@@ -124,6 +118,8 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("New Task"));
+
+        Mockito.verify(taskService).create(ArgumentMatchers.any(TaskRequest.class), Mockito.eq("user"));
     }
 
     @Test
@@ -165,6 +161,9 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("With File"));
+
+        Mockito.verify(taskService).create(ArgumentMatchers.any(TaskRequest.class), Mockito.eq("user"));
+        Mockito.verify(taskService).updateWithFile(Mockito.eq(10L), ArgumentMatchers.any(), Mockito.eq("user"));
     }
 
     @Test
@@ -179,6 +178,8 @@ class TaskApiControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks/1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Found"));
+
+        Mockito.verify(taskService).getById(1L, "user");
     }
 
     @Test
@@ -189,12 +190,16 @@ class TaskApiControllerTest {
                                 .with(SecurityMockMvcRequestPostProcessors.csrf())
                 )
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Mockito.verify(taskService).delete(1L, "user");
     }
 
     @Test
     void shouldDenyAnonymous() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks"))
                 .andExpect(MockMvcResultMatchers.status().isFound());
+
+        Mockito.verifyNoInteractions(taskService);
     }
 
     @Test
@@ -228,26 +233,42 @@ class TaskApiControllerTest {
                                 })
                 )
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
+
+        Mockito.verify(taskService).update(
+                Mockito.eq(999L),
+                ArgumentMatchers.any(TaskRequest.class),
+                Mockito.eq("user")
+        );
     }
 
     @Test
     @WithMockUser(username = "user")
     void shouldExportCsv() throws Exception {
         Mockito.when(taskService.findAllByUser("user")).thenReturn(List.of());
+        Mockito.when(csvService.exportTasksToCsv(ArgumentMatchers.anyList()))
+                .thenReturn("id,title\n".getBytes());
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks/export/csv"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.header().string("Content-Type", "text/csv; charset=utf-8"));
+
+        Mockito.verify(taskService).findAllByUser("user");
+        Mockito.verify(csvService).exportTasksToCsv(ArgumentMatchers.anyList());
     }
 
     @Test
     @WithMockUser(username = "user")
     void shouldExportPdf() throws Exception {
         Mockito.when(taskService.findAllByUser("user")).thenReturn(List.of());
+        Mockito.when(pdfService.exportTasksToPdf(ArgumentMatchers.anyList(), Mockito.eq("user")))
+                .thenReturn(new byte[]{'%', 'P', 'D', 'F'});
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks/export/pdf"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.header().string("Content-Type", "application/pdf"));
+
+        Mockito.verify(taskService).findAllByUser("user");
+        Mockito.verify(pdfService).exportTasksToPdf(ArgumentMatchers.anyList(), Mockito.eq("user"));
     }
 
     @Test
@@ -259,6 +280,8 @@ class TaskApiControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/tasks/stats"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.total").value(0));
+
+        Mockito.verify(taskService).getStats("user");
     }
 
     @Test
@@ -288,6 +311,8 @@ class TaskApiControllerTest {
                 .andExpect(MockMvcResultMatchers.content().string(
                         Matchers.containsString("Plik zapisany")
                 ));
+
+        Mockito.verify(taskService).updateWithFile(Mockito.eq(1L), ArgumentMatchers.any(), Mockito.eq("user"));
     }
 
     @Test
@@ -322,6 +347,9 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Updated Task"));
+
+        Mockito.verify(taskService).update(Mockito.eq(1L), ArgumentMatchers.any(TaskRequest.class), Mockito.eq("user"));
+        Mockito.verify(taskService, Mockito.never()).updateWithFile(Mockito.eq(1L), ArgumentMatchers.any(), Mockito.eq("user"));
     }
 
     @Test
@@ -367,6 +395,9 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Updated With File"));
+
+        Mockito.verify(taskService).update(Mockito.eq(1L), ArgumentMatchers.any(TaskRequest.class), Mockito.eq("user"));
+        Mockito.verify(taskService).updateWithFile(Mockito.eq(1L), ArgumentMatchers.any(), Mockito.eq("user"));
     }
 
     @Test
@@ -387,6 +418,8 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.content().string("Plik jest pusty"));
+
+        Mockito.verifyNoInteractions(taskService);
     }
 
     @Test
@@ -408,6 +441,8 @@ class TaskApiControllerTest {
                         "attachment; filename=\"test.txt\""
                 ))
                 .andExpect(MockMvcResultMatchers.content().bytes("content".getBytes()));
+
+        Mockito.verify(fileService).loadFileAsResource("test.txt");
     }
 
     @Test
@@ -418,6 +453,8 @@ class TaskApiControllerTest {
         task.attachmentFilename = "test.txt";
 
         Mockito.when(taskService.getById(1L, "user")).thenReturn(task);
+        Mockito.when(taskService.updateWithFile(Mockito.eq(1L), ArgumentMatchers.isNull(), Mockito.eq("user")))
+                .thenReturn(task);
 
         mockMvc.perform(
                         MockMvcRequestBuilders.delete("/api/v1/tasks/1/attachment")
@@ -425,8 +462,9 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
+        Mockito.verify(taskService).getById(1L, "user");
         Mockito.verify(fileService).deleteFile("test.txt");
-        Mockito.verify(taskService).updateWithFile(1L, null, "user");
+        Mockito.verify(taskService).updateWithFile(Mockito.eq(1L), ArgumentMatchers.isNull(), Mockito.eq("user"));
     }
 
     @Test
@@ -437,6 +475,8 @@ class TaskApiControllerTest {
         task.attachmentFilename = null;
 
         Mockito.when(taskService.getById(1L, "user")).thenReturn(task);
+        Mockito.when(taskService.updateWithFile(Mockito.eq(1L), ArgumentMatchers.isNull(), Mockito.eq("user")))
+                .thenReturn(task);
 
         mockMvc.perform(
                         MockMvcRequestBuilders.delete("/api/v1/tasks/1/attachment")
@@ -444,6 +484,8 @@ class TaskApiControllerTest {
                 )
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
+        Mockito.verify(taskService).getById(1L, "user");
         Mockito.verify(fileService, Mockito.never()).deleteFile(Mockito.anyString());
+        Mockito.verify(taskService).updateWithFile(Mockito.eq(1L), ArgumentMatchers.isNull(), Mockito.eq("user"));
     }
 }
