@@ -20,6 +20,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -133,13 +134,13 @@ public class TaskApiController {
         return ResponseEntity.ok(taskService.getById(id, userDetails.getUsername()));
     }
 
-    @Operation(summary = "Utwórz nowe zadanie")
+    @Operation(summary = "Utwórz nowe zadanie (multipart/form-data: task + opcjonalnie file)")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Zadanie utworzone"),
             @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @io.swagger.v3.oas.annotations.media.Content),
             @ApiResponse(responseCode = "404", description = "Nie znaleziono kategorii", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PostMapping(consumes = {"application/json", "multipart/form-data"})
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TaskResponse> create(
             @Valid @RequestPart("task") TaskRequest req,
             @RequestPart(value = "file", required = false) MultipartFile file,
@@ -161,13 +162,13 @@ public class TaskApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @Operation(summary = "Edytuj zadanie (lub zmień status)")
+    @Operation(summary = "Edytuj zadanie (multipart/form-data: task + opcjonalnie file)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Zadanie zaktualizowane"),
             @ApiResponse(responseCode = "400", description = "Błąd walidacji / błędne dane", content = @io.swagger.v3.oas.annotations.media.Content),
             @ApiResponse(responseCode = "404", description = "Zadanie lub kategoria nie istnieje", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PutMapping(value = "/{id}", consumes = {"application/json", "multipart/form-data"})
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TaskResponse> update(
             @Parameter(description = "ID zadania", example = "1")
             @PathVariable Long id,
@@ -247,7 +248,7 @@ public class TaskApiController {
     }
 
     @Operation(summary = "Upload pliku")
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("taskId") Long taskId,
